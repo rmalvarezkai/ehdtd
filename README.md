@@ -36,7 +36,8 @@ Example:
     ehd = Ehdtd(exchange, fetch_data, db_data)  # Create an instance
     ehd.start()  # Start fetching data
 
-    time.sleep(900)  # Wait for available data
+    time.sleep(900)  # First time Wait for available data, for the data to be updated,
+                     # you must wait between 90 minutes and 2.5 hours depending on the interval
 
     for v in fetch_data:
         symbol = v['symbol']
