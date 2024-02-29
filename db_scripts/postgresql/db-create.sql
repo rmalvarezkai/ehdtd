@@ -1,0 +1,11 @@
+
+DROP DATABASE IF EXISTS ehdtd ;
+DROP USER IF EXISTS ehdtd ;
+
+CREATE USER ehdtd WITH ENCRYPTED password 'ehdtd_9898' NOCREATEDB NOCREATEROLE ;
+
+CREATE DATABASE ehdtd WITH OWNER ehdtd ENCODING = 'utf-8' TEMPLATE template0 ;
+
+ALTER DATABASE ehdtd SET DateStyle = 'ISO, YMD';
+ALTER DATABASE ehdtd SET client_encoding = 'utf-8' ;
+

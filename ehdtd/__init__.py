@@ -1,9 +1,8 @@
 """
 Ehdtd - cryptoCurrency Exchange history data to database
-Main Class Ehdtd
 
 Author: Ricardo Marcelo Alvarez
-Date: 2023-10-31
+Date: 2023-11-23
 """
 
 from os.path import dirname, basename, isfile, join
@@ -32,9 +31,5 @@ for f in modules:
     if isfile(f) and not f.endswith('__init__.py'):
         __all__.append(basename(f)[:-3])
 
-##from .ehdtd import Ehdtd
+from .ehdtd import Ehdtd
 ##from .binance import BinanceAuxClass
-
-
-
-
