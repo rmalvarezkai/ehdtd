@@ -29,11 +29,12 @@ def main(argv): # pylint: disable=unused-argument
     exchange = 'binance'
 
     debug = False
-    get_data = True
-    # check_data = False
-    # try_fix_data = False
-    check_data = True
-    try_fix_data = True
+    get_data = False
+    check_data = False
+    try_fix_data = False
+    # get_data = True
+    # check_data = True
+    # try_fix_data = True
 
     stop_flag_file = '/tmp/stop_getting_data.txt'
 
@@ -182,8 +183,17 @@ def main(argv): # pylint: disable=unused-argument
     start_from = 0
     until_to = current_time
     return_type = 'pandas'
+    return_type = 'list'
+    return_type = 'list_consistent_streams'
+    return_type = 'list_consistent_streams_pandas'
 
     data_db = ehd.get_data_from_db(symbol, interval, start_from, until_to, return_type)
+    # pprint.pprint(data_db)
+    # print(data_db)
+
+    for i, data in enumerate(data_db):
+        print(f'{i} -> {type(data)} -> {len(data)}')
+
     print(data_db)
 
     return result

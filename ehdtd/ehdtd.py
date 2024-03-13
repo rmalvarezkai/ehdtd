@@ -2098,15 +2098,18 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         """
         get_data_from_db
         ================
-            This method return account of errors
+            This method return data from db
                 :param self: This instance.
                 :param symbol: str.
                 :param interval: str.
                 :param start_from: int
                 :param until_to: int
-                :param return_type: str 'pandas' or 'list'
+                :param return_type: str 'pandas', 'list', 'list_consistent_streams'\
+                    or 'list_consistent_streams_pandas'
 
-                :return: Pandas object or list[dict]
+                :return: Pandas dataframe, list[dict], list[list[dict]], list[list[dataframe]]
+                :rtype: Pandas dataframe, list[dict], list[list[dict]], list[dataframe]
+
         """
         result = None
 
@@ -2124,7 +2127,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         elif not isinstance(until_to, int):
             return result
 
-        if return_type is None or return_type not in ['pandas', 'list']:
+        if return_type is None or return_type not in\
+            ['pandas', 'list', 'list_consistent_streams', 'list_consistent_streams_pandas']:
             return_type = 'pandas'
 
         db_conn_local = self.__db_engine.connect()
@@ -2164,11 +2168,50 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
             results = db_conn_local.execute(stmt).fetchall()
 
+            result = []
+
+            consistent_data_num = None
+
             if results is not None and isinstance(results, list):
-                if return_type == 'list':
-                    result = results
-                else:
-                    result = pandas.DataFrame(results)
+                file_status_prev = None
+
+                for row in results:
+                    file_add = None
+                    file_add = {}
+                    file_add[column_open_time] = row[0]
+                    file_add[column_close_time] = row[1]
+                    file_add[column_open] = row[2]
+                    file_add[column_close] = row[3]
+                    file_add[column_low] = row[4]
+                    file_add[column_high] = row[5]
+                    file_add[column_volume] = row[6]
+                    file_add[column_status] = row[7]
+
+                    if return_type in ['list', 'pandas']:
+                        result.append(file_add)
+
+                    elif return_type\
+                        in ['list_consistent_streams', 'list_consistent_streams_pandas']:
+
+                        if file_add[column_status] == '__OK__':
+                            if file_status_prev is None\
+                                or file_status_prev != file_add[column_status]:
+                                result.append([])
+
+                                if consistent_data_num is None:
+                                    consistent_data_num = 0
+                                else:
+                                    consistent_data_num += 1
+
+                            result[consistent_data_num].append(file_add)
+
+                    file_status_prev = file_add[column_status]
+
+                if return_type == 'pandas':
+                    result = pandas.DataFrame(result)
+                elif return_type == 'list_consistent_streams_pandas':
+                    for i, data in enumerate(result):
+                        result[i] = pandas.DataFrame(data)
 
         except Exception as exc: # pylint: disable=broad-except
             __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
