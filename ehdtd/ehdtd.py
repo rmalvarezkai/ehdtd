@@ -2229,50 +2229,46 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
     def __init_loggin_out(self, log_dir: str=None):
         result = False
-        logging.getLogger().addHandler(logging.NullHandler())
-
-        if not self.__debug:
-            for handler in logging.root.handlers[:]:
-                logging.root.removeHandler(handler)
 
         if self.__set_default_log_file(log_dir=log_dir):
             try:
-                logging.basicConfig(handlers=\
-                                    [logging.FileHandler(self.__log_logger_file,\
-                                                         'w', 'utf-8')], level=logging.INFO)
-                logging.basicConfig(handlers=\
-                                    [logging.FileHandler(self.__err_logger_file,\
-                                                         'w', 'utf-8')], level=logging.ERROR)
+                if not self.__debug:
+                    for handler in logging.root.handlers[:]:
+                        logging.root.removeHandler(handler)
 
-                self.__log_logger = (
-                    self.__setup_logger('LOG', self.__log_logger_file, logging.INFO)
+                __log_formatter = (
+                    logging.Formatter('%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S -')
                 )
-                self.__err_logger = (
-                    self.__setup_logger('ERR', self.__err_logger_file, logging.ERROR)
+
+                __err_formatter = (
+                    logging.Formatter('%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S -')
                 )
+
+                log_handler = logging.FileHandler(self.__log_logger_file)
+                log_handler.setFormatter(__log_formatter)
+                self.__log_logger = logging.getLogger('LOG')
+                self.__log_logger.setLevel(logging.INFO)
+
+                for handler in self.__log_logger.handlers[:]:
+                    self.__log_logger.removeHandler(handler)
+
+                self.__log_logger.addHandler(log_handler)
+
+                err_handler = logging.FileHandler(self.__err_logger_file)
+                err_handler.setFormatter(__err_formatter)
+                self.__err_logger = logging.getLogger('ERR')
+                self.__err_logger.setLevel(logging.ERROR)
+
+                for handler in self.__err_logger.handlers[:]:
+                    self.__err_logger.removeHandler(handler)
+
+                self.__err_logger.addHandler(err_handler)
                 result = True
+
             except Exception: # pylint: disable=broad-except
                 result = False
 
         return result
-
-    def __setup_logger(self, name, log_file, level):
-        __log_formatter = (
-            logging.Formatter('%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S -')
-        )
-        handler = logging.FileHandler(log_file)
-        handler.setFormatter(__log_formatter)
-
-        logger = logging.getLogger(name)
-        logger.setLevel(level)
-        logger.addHandler(handler)
-
-        for handler_n in logger.handlers:
-            if isinstance(handler_n, logging.StreamHandler):
-                logger.removeHandler(handler_n)
-
-        return logger
-
 
     def __set_default_log_file(self, log_dir: str=None):
         """
