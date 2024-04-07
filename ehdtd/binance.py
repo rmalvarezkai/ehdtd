@@ -375,7 +375,7 @@ class BinanceEhdtdAuxClass():
                 result['res_msg'] = None
 
                 if hasattr(exc, 'code'):
-                    result['code'] = response.status
+                    result['code'] = exc.code
                 if hasattr(exc, 'read'):
                     result['data'] = exc.read().decode('utf-8')
                 if hasattr(exc, 'headers'):
@@ -401,7 +401,7 @@ class BinanceEhdtdAuxClass():
                         if 'code' in result['data']:
                             result['res_code'] = result['data']['code']
                         if 'msg' in result['data']:
-                            result['res_msg'] = result['data']['res_msg']
+                            result['res_msg'] = result['data']['msg']
 
                 if result['code'] is not None\
                     and isinstance(result['code'], int)\
