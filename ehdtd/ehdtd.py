@@ -2431,6 +2431,31 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         return __suported_exchanges
 
     @classmethod
+    def get_exchange_connectivity(cls, exchange='binance'):
+        """
+        get_exchange_connectivity.
+        =========================
+            This function return a dict with connectivity information.
+                :param cls: Ehdtd Class.
+                :param exchange: str.
+
+                :return dict: result.
+                    result = {
+                        'result': bool, # True if connectivity is working False in other case.
+                        'code': int | None, # Error Code
+                        'msg': str | None # Error message
+                    }
+
+        """
+        __result = None
+
+        __result = (
+            EhdtdExchangeConfig.exchange_classes[exchange]().get_exchange_connectivity()
+        )
+
+        return __result
+
+    @classmethod
     def get_supported_intervals(cls, exchange='binance'):
         """
         get_supported_intervals.

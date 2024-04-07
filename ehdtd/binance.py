@@ -327,6 +327,42 @@ class BinanceEhdtdAuxClass():
         return result
 
     @classmethod
+    def get_exchange_connectivity(cls):
+        """
+        get_exchange_connectivity
+        =========================
+            This function return a dict with connectivity information.
+                :param cls: BinanceEhdtdAuxClass Class.
+                :return dict: result.
+                    result = {
+                        'result': bool, # True if connectivity is working False in other case.
+                        'code': int | None, # Error Code
+                        'msg': str | None # Error message
+                    }
+        """
+        result = None
+
+        __url_api = cls.get_api_url()
+        __endpoint = '/ping'
+        __url = f'{__url_api}{__endpoint}'
+        __data = ecf.file_get_contents_url(__url)
+        if ecf.is_json(__data):
+            __data = json.loads(__data)
+            if __data is not None and isinstance(__data, dict):
+                result = {}
+                result['result'] = True
+                result['code'] = None
+                result['msg'] = None
+
+                if 'code' in __data:
+                    result['result'] = False
+                    result['code'] = __data['code']
+                    if 'msg' in __data:
+                        result['msg'] = __data['msg']
+
+        return result
+
+    @classmethod
     def get_unified_symbol_from_symbol(cls, symbol):
         """
         get_unified_symbol_from_symbol

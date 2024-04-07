@@ -36,6 +36,10 @@ def main(argv): # pylint: disable=unused-argument
     # check_data = True
     # try_fix_data = True
 
+    conn = Ehdtd.get_exchange_connectivity(exchange)
+
+    pprint.pprint(conn, sort_dicts=False)
+
     stop_flag_file = '/tmp/stop_getting_data.txt'
 
     symbols = ['BTC/USDT', 'BNB/USDT', 'ETH/USDT', 'LTC/USDT']
