@@ -402,6 +402,8 @@ class BinanceEhdtdAuxClass():
                             result['res_code'] = result['data']['code']
                         if 'msg' in result['data']:
                             result['res_msg'] = result['data']['msg']
+                            if isinstance(result['res_msg'], bytes):
+                                result['res_msg'] = result['res_msg'].decode()
 
                 if result['code'] is not None\
                     and isinstance(result['code'], int)\
