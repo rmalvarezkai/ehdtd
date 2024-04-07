@@ -92,7 +92,6 @@ def file_get_contents_url(url, mode='b', post_data=None, headers=None, timeout=9
                 with urllib.request.urlopen(req, None, timeout=timeout) as response:
                     result = response.read()
 
-
             except Exception: # pylint: disable=broad-except
                 result = None
 

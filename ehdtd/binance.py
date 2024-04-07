@@ -9,6 +9,7 @@ Date: 2023-10-31
 import json
 import time
 import io
+import urllib.request
 import csv
 import random
 import hashlib
@@ -341,24 +342,74 @@ class BinanceEhdtdAuxClass():
                     }
         """
         result = None
+        headers = {}
+        timeout = 45
 
         __url_api = cls.get_api_url()
         __endpoint = '/ping'
         __url = f'{__url_api}{__endpoint}'
-        __data = ecf.file_get_contents_url(__url)
-        if ecf.is_json(__data):
-            __data = json.loads(__data)
-            if __data is not None and isinstance(__data, dict):
-                result = {}
-                result['result'] = True
-                result['code'] = None
-                result['msg'] = None
 
-                if 'code' in __data:
+        req = urllib.request.Request(__url, None, headers)
+        if req is not None:
+            try:
+                with urllib.request.urlopen(req, None, timeout=timeout) as response:
+                    result = {}
+                    result['result'] = None
+                    result['code'] = response.status
+                    result['data'] = response.read()
+                    result['headers'] = response.headers
+                    result['headers_str'] = response.headers.as_string()
+                    result['final_url'] = response.url
+                    result['res_code'] = None
+                    result['res_msg'] = None
+
+            except Exception as exc: # pylint: disable=broad-except
+                result = {}
+                result['result'] = None
+                result['code'] = None
+                result['data'] = None
+                result['headers'] = None
+                result['headers_str'] = None
+                result['final_url'] = None
+                result['res_code'] = None
+                result['res_msg'] = None
+
+                if hasattr(exc, 'code'):
+                    result['code'] = response.status
+                if hasattr(exc, 'read'):
+                    result['data'] = exc.read().decode('utf-8')
+                if hasattr(exc, 'headers'):
+                    result['headers'] = exc.headers
+                    header_str = ''
+                    for header in exc.headers:
+                        header_str += f'{header}: {exc.headers[header]}'
+                    result['headers_str'] = header_str
+                if hasattr(exc, 'url'):
+                    result['final_url'] = exc.url
+
+            if result is not None\
+                and isinstance(result, dict)\
+                and 'data' in result:
+
+                if isinstance(result['data'], bytes):
+                    result['data'] = result['data'].decode()
+
+                if ecf.is_json(result['data']):
+                    result['data'] = json.loads(result['data'])
+
+                    if result['data'] is not None and isinstance(result['data'], dict):
+                        if 'code' in result['data']:
+                            result['res_code'] = result['data']['code']
+                        if 'msg' in result['data']:
+                            result['res_msg'] = result['data']['res_msg']
+
+                if result['code'] is not None\
+                    and isinstance(result['code'], int)\
+                    and 200 <= result['code'] < 300\
+                    and result['res_code'] is None:
+                    result['result'] = True
+                else:
                     result['result'] = False
-                    result['code'] = __data['code']
-                    if 'msg' in __data:
-                        result['msg'] = __data['msg']
 
         return result
 
