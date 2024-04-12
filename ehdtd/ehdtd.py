@@ -182,17 +182,24 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         self.__db_name = None
         self.__exchange = None
         self.__fetch_data = None
-        self.__trading_type = trading_type
+        self.__trading_type = None
 
         self.__lock_thread_get_file = threading.Lock()
         self.__lock_schedule = threading.Lock()
 
         self.__cache_table_name = 'ehdtd_cache_data'
 
+        if trading_type is not None\
+            and isinstance(trading_type, str)\
+            and trading_type in Ehdtd.get_supported_trading_types():
+            self.__trading_type = trading_type
+        else:
+            raise ValueError(f'The trading type {trading_type} is not supported.')
+
         if exchange in Ehdtd.get_supported_exchanges():
             self.__exchange = exchange
         else:
-            raise ValueError('The exchange ' + str(exchange) + ' is not supported.')
+            raise ValueError(f'The exchange {exchange} is not supported.')
 
         self.__exchange_aux_class = EhdtdExchangeConfig.exchange_classes[self.__exchange]()
 
@@ -348,7 +355,9 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         self.__db_conn.close()
 
     def __get_table_name(self, symbol, interval):
-        result = self.__exchange + '__' + symbol.replace('/','_').lower() + '__' + interval
+        result = f"{self.__exchange}__"
+        result += f"{self.__trading_type.replace('/','_').replace('-','_').lower()}"
+        result += f"__{symbol.replace('/','_').lower()}__{interval}"
         return result
 
     def __create_cache_table(self):
@@ -2454,6 +2463,20 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         )
 
         return __result
+
+    @classmethod
+    def get_supported_trading_types(cls):
+        """
+        get_supported_trading_types.
+        ============================
+            This method return a list of supported trading_types.
+                :param cls: Ehdtd Class.
+
+                :return: list of supported trading_types.
+        """
+        __suported_trading_types = ['SPOT']
+
+        return __suported_trading_types
 
     @classmethod
     def get_supported_intervals(cls, exchange='binance'):
