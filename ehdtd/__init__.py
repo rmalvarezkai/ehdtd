@@ -10,6 +10,8 @@ import glob
 import sys
 import importlib.metadata
 
+from .ehdtd import Ehdtd, EhdtdRO, EhdtdExchangeConfig
+
 ehdtd_metadata = importlib.metadata.metadata('ehdtd')
 
 __title__ = ehdtd_metadata['Name']
@@ -31,5 +33,4 @@ for f in modules:
     if isfile(f) and not f.endswith('__init__.py'):
         __all__.append(basename(f)[:-3])
 
-from .ehdtd import Ehdtd
 ##from .binance import BinanceAuxClass

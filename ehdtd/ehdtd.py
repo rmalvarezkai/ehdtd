@@ -336,7 +336,6 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         self.__is_threads_running = False
         self.__stop_running = False
 
-
     def __del__(self):
         if hasattr(self, '__is_threads_running')\
             and self.__is_threads_running\
@@ -2796,3 +2795,379 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         result = (__next_year, __next_month)
 
         return result
+
+class EhdtdRO():
+    """
+    EhdtdRO - cryptoCurrency Exchange history data read only version.
+    =================================================================
+    This class retrieves historical data database.
+
+    Example:
+    ```python
+    import time
+    from ehdtd import EhdtdRO
+
+    exchange = 'binance'
+    symbol = 'BTC/USDT'
+    interval = '1m'
+    limit = 10
+
+    db_data = {
+        'db_type': 'postgresql',  # postgresql, mysql
+        'db_name': 'ehdtd',
+        'db_user': 'ehdtd',
+        'db_pass': 'xxxxxxxxx',
+        'db_host': '127.0.0.1',
+        'db_port': '5432'
+    }
+
+    fetch_data = [
+        {
+            'symbol': symbol,
+            'interval': interval
+        }
+    ]
+
+    ehd_ro = EhdtdRO(exchange, fetch_data, db_data)  # Create an instance
+
+    ```
+    """
+
+    def __init__(self,\
+                 exchange,\
+                 fetch_data: list[dict],\
+                 db_data: dict,\
+                 trading_type: str='SPOT',\
+                 debug: bool=False):
+        """
+        EhdtdRO constructor
+        =================
+            :param self: EhdtdRO instance.
+            :param exchange: str exchange name.
+            :param fetch_data: list[dict]
+                                    dicts must have this struct.
+                                        {
+                                            'symbol': 'BTC/USDT',
+                                            'interval': '1d'
+                                        }
+
+                                            symbol: str valid symbol for exchange name.
+                                            interval: str '1m', '3m', '5m', '15m', '30m',
+                                                        '1h', '2h', '4h', '6h', '8h',
+                                                        '12h', '1d', '3d', '1w', '1mo'
+
+            :param db_data: dict
+                                dict must have dist struct
+                                    {
+                                        db_type: str, #Only supported 'postgresql' and 'mysql'.
+                                        db_name: str, #Database name.
+                                        db_user: str, #Database user.
+                                        db_pass: str, #Database pass.
+                                        db_host: str, #Database host.
+                                        db_port: str  #Database port.
+                                    }
+
+            :param trading_type: str only allowed 'SPOT'
+            :param debug: bool
+
+            :return: Return a new instance of the Class EhdtdRO.
+        """
+
+        self.__db_type = None
+        self.__db_name = None
+        self.__db_engine = None
+        self.__db_conn = None
+        self.__exchange = None
+        self.__fetch_data = fetch_data
+        self.__trading_type = None
+        self.__debug = debug
+
+        if self.__debug is None or not isinstance(self.__debug, bool):
+            err_msg = 'debug must be boolean True or False'
+            raise ValueError(err_msg)
+
+        if exchange is not None\
+            and isinstance(exchange, str)\
+            and len(exchange) > 0\
+            and exchange in Ehdtd.get_supported_exchanges():
+            self.__exchange = exchange
+        else:
+            err_msg = f'Wrong exchange name {exchange} or invalid exchange.'
+            raise ValueError(err_msg)
+
+        if trading_type is not None\
+            and isinstance(trading_type, str)\
+            and len(trading_type) > 0\
+            and trading_type in Ehdtd.get_supported_trading_types():
+            self.__trading_type = trading_type
+        else:
+            err_msg = f'Wrong trading type name {trading_type} or invalid trading type'
+            raise ValueError(err_msg)
+
+        if isinstance(db_data, dict) and all(key in db_data for key in\
+            ['db_type', 'db_name', 'db_user', 'db_pass', 'db_host', 'db_port']):
+
+            if all(isinstance(db_data[key], str) for key in\
+                   ['db_type', 'db_name', 'db_user', 'db_pass', 'db_host', 'db_port']):
+                self.__db_type = db_data['db_type']
+                self.__db_name = db_data['db_name']
+
+                if db_data['db_type'] in Ehdtd.get_supported_databases():
+                    self.__db_type = db_data['db_type']
+                else:
+                    raise ValueError('The database type '\
+                                     + str(db_data['db_type'])\
+                                     + ' is not supported.')
+
+                if self.__db_type == 'postgresql':
+                    self.__db_uri = db_data['db_type'] + '://' + db_data['db_user'] + ':'\
+                        + db_data['db_pass'] + '@' + db_data['db_host'] + ':'\
+                        + db_data['db_port'] + '/' + self.__db_name
+                elif self.__db_type == 'mysql':
+                    self.__db_uri = db_data['db_type'] + '+pymysql://'\
+                        + db_data['db_user'] + ':'\
+                        + db_data['db_pass'] + '@' + db_data['db_host'] + ':'\
+                        + db_data['db_port'] + '/' + self.__db_name
+
+                if self.__check_database_connection():
+                    self.__db_engine = sqlalchemy.create_engine(self.__db_uri)
+
+                    self.__db_conn = self.__db_engine.connect()
+                    self.__db_metadata = sqlalchemy.MetaData()
+                    self.__db_metadata.reflect(bind=self.__db_conn)
+
+                    try:
+                        self.__db_engine = sqlalchemy.create_engine(self.__db_uri)
+
+                        self.__db_conn = self.__db_engine.connect()
+                        self.__db_metadata = sqlalchemy.MetaData()
+                        self.__db_metadata.reflect(bind=self.__db_conn)
+
+                    except Exception as exc: # pylint: disable=broad-except
+                        err_msg = f'Error on connection to database {exc}'
+                        print(err_msg)
+                else:
+                    err_msg = 'Error on connection to database'
+                    raise ValueError(err_msg)
+            else:
+                err_msg = 'Wrong database data'
+                raise ValueError(err_msg)
+
+        else:
+            err_msg = 'Wrong database data'
+            raise ValueError(err_msg)
+
+        if not self.__check_fetch_data_struct(self.__fetch_data):
+            err_msg = 'Wrong fetch data'
+            raise ValueError(err_msg)
+
+    def __check_fetch_data_struct(self, fecth_data):
+        """
+        __check_fetch_data_struct
+        =========================
+            This method return true if fetch_data struct it is correct
+                :param self: This instance.
+                :param fetch_data: list[dict].
+
+                :return: bool.
+        """
+
+        result = False
+
+        if fecth_data is not None and isinstance(fecth_data, list) and len(fecth_data) > 0:
+            result = True
+
+            for data_n in fecth_data:
+                result = result and isinstance(data_n, dict)\
+                    and data_n is not None\
+                    and 'symbol' in data_n\
+                    and 'interval' in data_n and isinstance(data_n['symbol'], str)\
+                    and isinstance(data_n['interval'], str)
+                if result:
+                    table_name = self.__get_table_name(data_n['symbol'], data_n['interval'])
+                    result = result and self.__check_table_exists(table_name)
+
+        return result
+
+    def __check_table_exists(self, table_name):
+        result = False
+
+        metadata = sqlalchemy.MetaData()
+        metadata.reflect(bind=self.__db_engine)
+
+        try:
+            table = metadata.tables[table_name] # pylint: disable=unused-variable
+            result = True
+        except Exception: # pylint: disable=broad-except
+            result = False
+
+        return result
+
+    def __check_database_connection(self):
+        """
+        check_database_connection
+        =========================
+
+        Check the connection to a database.
+
+        Parameters:
+            self: EhdtdRO instance.
+
+        Returns:
+            bool: True if the connection is successful, False otherwise.
+        """
+        result = False
+
+        try:
+            engine = sqlalchemy.create_engine(self.__db_uri)
+            with engine.connect() as connection: # pylint: disable=unused-variable
+                result = True
+        except Exception: # pylint: disable=broad-except
+            result = False
+
+        return result
+
+    def __get_table_name(self, symbol, interval):
+        result = f"{self.__exchange}__"
+        result += f"{self.__trading_type.replace('/','_').replace('-','_').lower()}"
+        result += f"__{symbol.replace('/','_').lower()}__{interval}"
+        return result
+
+    def get_data_from_db(self,\
+                        symbol,\
+                        interval,\
+                        start_from: int=0,\
+                        until_to: int=None,\
+                        return_type: str='pandas'):
+        """
+        get_data_from_db
+        ================
+            This method return data from db
+                :param self: This instance.
+                :param symbol: str.
+                :param interval: str.
+                :param start_from: int
+                :param until_to: int
+                :param return_type: str 'pandas', 'list', 'list_consistent_streams'\
+                    or 'list_consistent_streams_pandas'
+
+                :return: Pandas dataframe, list[dict], list[list[dict]], list[list[dataframe]]
+                :rtype: Pandas dataframe, list[dict], list[list[dict]], list[dataframe]
+
+        """
+        result = None
+
+        if symbol is None\
+            or interval is None\
+            or not isinstance(symbol, str)\
+            or not isinstance(interval, str)\
+            or interval not in Ehdtd.get_supported_intervals(self.__exchange):
+            return result
+        if start_from is None or not isinstance(start_from, int):
+            return result
+
+        if until_to is None:
+            until_to = int(round(time.time()))
+        elif not isinstance(until_to, int):
+            return result
+
+        if return_type is None or return_type not in\
+            ['pandas', 'list', 'list_consistent_streams', 'list_consistent_streams_pandas']:
+            return_type = 'pandas'
+
+        db_conn_local = self.__db_engine.connect()
+        table_name = self.__get_table_name(symbol, interval)
+
+        column_open_time = 'open_time'
+        column_close_time = 'close_time'
+        column_open = 'open_price'
+        column_close = 'close_price'
+        column_low = 'low'
+        column_high = 'high'
+        column_volume = 'volume'
+        column_status = 'status'
+
+        table = sqlalchemy.Table(table_name, self.__db_metadata, autoload_with=db_conn_local)
+
+        try:
+            stmt = sqlalchemy.select(\
+                                        sqlalchemy.column(column_open_time),\
+                                        sqlalchemy.column(column_close_time),\
+                                        sqlalchemy.cast(sqlalchemy.column(column_open),\
+                                                        sqlalchemy.Float).label(column_open),\
+                                        sqlalchemy.cast(sqlalchemy.column(column_close),\
+                                                        sqlalchemy.Float).label(column_close),\
+                                        sqlalchemy.cast(sqlalchemy.column(column_low),\
+                                                        sqlalchemy.Float).label(column_low),\
+                                        sqlalchemy.cast(sqlalchemy.column(column_high),\
+                                                        sqlalchemy.Float).label(column_high),\
+                                        sqlalchemy.cast(sqlalchemy.column(column_volume),\
+                                                        sqlalchemy.Float).label(column_volume),\
+                                        sqlalchemy.column(column_status))\
+                                        .select_from(table)\
+                                        .where(sqlalchemy.and_(\
+                                            sqlalchemy.column(column_open_time) >= start_from),\
+                                            sqlalchemy.column(column_open_time) <= until_to)\
+                                        .order_by(sqlalchemy.column(column_open_time).asc())
+
+            results = db_conn_local.execute(stmt).fetchall()
+
+            result = []
+
+            consistent_data_num = None
+
+            if results is not None and isinstance(results, list):
+                file_status_prev = None
+
+                for row in results:
+                    file_add = None
+                    file_add = {}
+                    file_add[column_open_time] = row[0]
+                    file_add[column_close_time] = row[1]
+                    file_add[column_open] = row[2]
+                    file_add[column_close] = row[3]
+                    file_add[column_low] = row[4]
+                    file_add[column_high] = row[5]
+                    file_add[column_volume] = row[6]
+                    file_add[column_status] = row[7]
+
+                    if return_type in ['list', 'pandas']:
+                        result.append(file_add)
+
+                    elif return_type\
+                        in ['list_consistent_streams', 'list_consistent_streams_pandas']:
+
+                        if file_add[column_status] == '__OK__':
+                            if file_status_prev is None\
+                                or file_status_prev != file_add[column_status]:
+                                result.append([])
+
+                                if consistent_data_num is None:
+                                    consistent_data_num = 0
+                                else:
+                                    consistent_data_num += 1
+
+                            result[consistent_data_num].append(file_add)
+
+                    file_status_prev = file_add[column_status]
+
+                if return_type == 'pandas':
+                    result = pandas.DataFrame(result)
+                elif return_type == 'list_consistent_streams_pandas':
+                    for i, data in enumerate(result):
+                        result[i] = pandas.DataFrame(data)
+
+        except Exception as exc: # pylint: disable=broad-except
+            __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
+            err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
+            err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
+            # self.__err_logger.error(err_msg)
+            time.sleep(5)
+
+            result = None
+
+        if db_conn_local:
+            db_conn_local.close()
+
+        return result
+    
