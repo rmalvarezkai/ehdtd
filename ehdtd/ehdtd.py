@@ -517,7 +517,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             time_end = int(datetime.datetime(next_year, 1, 1, 0, 0, 0,\
                                              tzinfo=datetime.timezone.utc).timestamp())
 
-            if exists_partition is not None and exists_partition is False:
+            if exists_partition is not None and not exists_partition:
                 if self.__db_type == 'postgresql':
 
                     sql_query = "CREATE TABLE " + str(partition_name)\
@@ -1258,6 +1258,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         column_open_date = 'open_date'
         column_close_time = 'close_time'
         column_close_date = 'close_date'
+        column_volume = 'volume'
         column_status = 'status'
 
         last_open_time_in_db = self.get_last_open_time_in_db(symbol, interval, db_conn_local)
@@ -1297,7 +1298,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                                          sqlalchemy.column(column_close_time),\
                                          sqlalchemy.column(column_status),\
                                          sqlalchemy.column(column_open_date),\
-                                         sqlalchemy.column(column_close_date))\
+                                         sqlalchemy.column(column_close_date),\
+                                         sqlalchemy.column(column_volume))\
                                          .select_from(sqlalchemy.table(table_name))\
                                          .where(sqlalchemy.column(column_open_time) >= start_from)\
                                          .order_by(sqlalchemy.column(column_open_time).asc())\
@@ -1327,7 +1329,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                             Ehdtd.get_delta_seconds_for_interval(interval, __year, __month)
                         )
 
-                    elif i >= 0:
+                    if i >= 0:
                         if i == last_index:
                             if i == last_open_time_in_db:
                                 status = '__NON_CHECK__'
@@ -1335,7 +1337,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                                 status = fila[2]
 
                         elif fila[1] == results[i+1][0]\
-                            and __delta_seconds == (fila[1] - fila[0]):
+                            and __delta_seconds == (fila[1] - fila[0])\
+                            and fila[5] != 0:
                             status = '__OK__'
                         else:
                             status = '__ERROR__'
