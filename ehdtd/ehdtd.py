@@ -1338,7 +1338,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                         elif fila[1] == results[i+1][0]\
                             and __delta_seconds == (fila[1] - fila[0])\
-                            and fila[5] != 0:
+                            and float(fila[5]) != 0:
                             status = '__OK__'
                         else:
                             status = '__ERROR__'
@@ -1466,7 +1466,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                 if __get_data is not None and isinstance(__get_data, list) and len(__get_data) >= 2:
                     if 'open_time' in __get_data[0] and 'close_time' in __get_data[0]\
-                        and 'open_time' in __get_data[1] and 'close_time' in __get_data[1]:
+                        and 'open_time' in __get_data[1] and 'close_time' in __get_data[1]\
+                        and 'volume' in __get_data[0]:
                         if interval == '1mo':
                             __year, __month, __day = (
                                 self.get_ymd_from_time(int(__get_data[0]['open_time']))
