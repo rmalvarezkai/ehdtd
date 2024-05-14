@@ -2826,21 +2826,15 @@ class EhdtdRO():
         'db_port': '5432'
     }
 
-    fetch_data = [
-        {
-            'symbol': symbol,
-            'interval': interval
-        }
     ]
 
-    ehd_ro = EhdtdRO(exchange, fetch_data, db_data)  # Create an instance
+    ehd_ro = EhdtdRO(exchange, db_data)  # Create an instance
 
     ```
     """
 
     def __init__(self,\
                  exchange,\
-                 fetch_data: list[dict],\
                  db_data: dict,\
                  trading_type: str='SPOT',\
                  debug: bool=False):
@@ -2849,17 +2843,6 @@ class EhdtdRO():
         =================
             :param self: EhdtdRO instance.
             :param exchange: str exchange name.
-            :param fetch_data: list[dict]
-                                    dicts must have this struct.
-                                        {
-                                            'symbol': 'BTC/USDT',
-                                            'interval': '1d'
-                                        }
-
-                                            symbol: str valid symbol for exchange name.
-                                            interval: str '1m', '3m', '5m', '15m', '30m',
-                                                        '1h', '2h', '4h', '6h', '8h',
-                                                        '12h', '1d', '3d', '1w', '1mo'
 
             :param db_data: dict
                                 dict must have dist struct
@@ -2883,7 +2866,6 @@ class EhdtdRO():
         self.__db_engine = None
         self.__db_conn = None
         self.__exchange = None
-        self.__fetch_data = fetch_data
         self.__trading_type = None
         self.__debug = debug
 
@@ -2962,38 +2944,6 @@ class EhdtdRO():
             err_msg = 'Wrong database data'
             raise ValueError(err_msg)
 
-        if not self.__check_fetch_data_struct(self.__fetch_data):
-            err_msg = 'Wrong fetch data'
-            raise ValueError(err_msg)
-
-    def __check_fetch_data_struct(self, fecth_data):
-        """
-        __check_fetch_data_struct
-        =========================
-            This method return true if fetch_data struct it is correct
-                :param self: This instance.
-                :param fetch_data: list[dict].
-
-                :return: bool.
-        """
-
-        result = False
-
-        if fecth_data is not None and isinstance(fecth_data, list) and len(fecth_data) > 0:
-            result = True
-
-            for data_n in fecth_data:
-                result = result and isinstance(data_n, dict)\
-                    and data_n is not None\
-                    and 'symbol' in data_n\
-                    and 'interval' in data_n and isinstance(data_n['symbol'], str)\
-                    and isinstance(data_n['interval'], str)
-                if result:
-                    table_name = self.__get_table_name(data_n['symbol'], data_n['interval'])
-                    result = result and self.__check_table_exists(table_name)
-
-        return result
-
     def __check_table_exists(self, table_name):
         result = False
 
@@ -3008,6 +2958,31 @@ class EhdtdRO():
 
         return result
 
+    def check_if_exists_symbol_interval(self, symbol, interval):
+        """
+        check_if_exists_symbol_interval
+        ===============================
+        Check the connection to a database.
+
+        Parameters:
+            :param self: EhdtdRO instance.
+            :param symbol: str.
+            :param interval: str.
+
+        Returns:
+            :return bool: True if the symbol interval exists in db
+
+        """
+
+        result = False
+
+        __table_name = self.__get_table_name(symbol, interval)
+
+        if self.__check_table_exists(__table_name):
+            result = True
+
+        return result
+
     def __check_database_connection(self):
         """
         check_database_connection
@@ -3016,10 +2991,10 @@ class EhdtdRO():
         Check the connection to a database.
 
         Parameters:
-            self: EhdtdRO instance.
+            :param self: EhdtdRO instance.
 
         Returns:
-            bool: True if the connection is successful, False otherwise.
+            :return bool: True if the connection is successful, False otherwise.
         """
         result = False
 
