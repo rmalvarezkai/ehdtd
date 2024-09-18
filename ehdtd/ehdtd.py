@@ -1479,8 +1479,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                         if (int(__get_data[0]['close_time']) - int(__get_data[0]['open_time']))\
                             == __delta_seconds\
-                            and int(__get_data[0]['close_time']) == int(__get_data[1]['open_time'])\
-                            and float(__get_data[0]['volume']) != 0:
+                            and int(__get_data[0]['close_time']) == int(__get_data[1]['open_time']):
 
                             if self.__exec_db_upsert_stmt(symbol, interval, __get_data, db_conn):
 

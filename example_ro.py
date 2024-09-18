@@ -45,6 +45,10 @@ def main(argv): # pylint: disable=unused-argument
     db_data['db_user'] = 'ehdtd'
     db_data['db_pass'] = 'ehdtd_9898'
     db_data['db_host'] = '127.0.0.1'
+
+    # db_data['db_pass'] = ''
+    # db_data['db_host'] = ''
+
     db_data['db_port'] = '5432'
 
     if db_data['db_type'] == 'mysql':
@@ -57,6 +61,21 @@ def main(argv): # pylint: disable=unused-argument
             str_out = f'Exists symbol, interval in db: {symbol}, {interval} -> '
             str_out += f'{ehd_ro.check_if_exists_symbol_interval(symbol, interval)}'
             print(str_out)
+
+    symbol = 'BTC/USDT'
+    interval = '15m'
+    start_from = int(round(time.time())) - (1400 * 20)
+    until_to = None
+    return_type = 'list'
+    # return_type = 'list_consistent_streams'
+
+    data = ehd_ro.get_data_from_db(symbol,\
+                                   interval,\
+                                   start_from,\
+                                   until_to,\
+                                   return_type)
+
+    print(data)
 
     return result
 
