@@ -319,6 +319,7 @@ class BinanceEhdtdAuxClass():
         """
         result = None
 
+        __url_api = None
         if trading_type == 'SPOT':
             __url_api = 'https://api.binance.com/api/v3'
             #__url_test = 'https://testnet.binance.vision/api/v3'

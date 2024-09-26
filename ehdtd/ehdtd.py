@@ -1337,8 +1337,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                                 status = fila[2]
 
                         elif fila[1] == results[i+1][0]\
-                            and __delta_seconds == (fila[1] - fila[0])\
-                            and float(fila[5]) != 0:
+                            and __delta_seconds == (fila[1] - fila[0]):
                             status = '__OK__'
                         else:
                             status = '__ERROR__'
@@ -2824,8 +2823,6 @@ class EhdtdRO():
         'db_host': '127.0.0.1',
         'db_port': '5432'
     }
-
-    ]
 
     ehd_ro = EhdtdRO(exchange, db_data)  # Create an instance
 
