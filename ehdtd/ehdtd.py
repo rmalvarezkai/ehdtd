@@ -25,6 +25,7 @@ from ccxw import Ccxw
 
 import ehdtd.ehdtd_common_functions as ecf
 from .binance import BinanceEhdtdAuxClass
+from .bybit import BybitEhdtdAuxClass
 
 class EhdtdExchangeConfig:
     """
@@ -39,7 +40,8 @@ class EhdtdExchangeConfig:
     """
 
     exchange_classes = {
-        'binance': BinanceEhdtdAuxClass
+        'binance': BinanceEhdtdAuxClass,
+        'bybit': BybitEhdtdAuxClass
     }
 
 class Ehdtd(): # pylint: disable=too-many-instance-attributes
@@ -2437,7 +2439,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                 :return: list of supported exchanges.
         """
-        __suported_exchanges = ['binance']
+        __suported_exchanges = ['binance', 'bybit']
 
         return __suported_exchanges
 

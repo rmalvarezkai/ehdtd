@@ -9,7 +9,8 @@ from os.path import dirname, basename, isfile, join
 import glob
 import sys
 import importlib.metadata
-
+from .binance import BinanceEhdtdAuxClass
+from .bybit import BybitEhdtdAuxClass
 from .ehdtd import Ehdtd, EhdtdRO, EhdtdExchangeConfig
 
 ehdtd_metadata = importlib.metadata.metadata('ehdtd')
