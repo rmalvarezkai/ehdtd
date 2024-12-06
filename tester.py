@@ -9,12 +9,14 @@ Date: 2023-11-23
 
 import sys
 import time # pylint: disable=unused-import
-import os
+import os # pylint: disable=unused-import
 import logging # pylint: disable=unused-import
 
 import pprint # pylint: disable=unused-import
 
-from ehdtd import Ehdtd
+from ehdtd import Ehdtd # pylint: disable=unused-import
+from ehdtd.binance import BinanceEhdtdAuxClass # pylint: disable=unused-import
+from ehdtd.bybit import BybitEhdtdAuxClass # pylint: disable=unused-import
 # from ehdtd.binance import BinanceEhdtdAuxClass
 # import ehdtd.ehdtd_common_functions as ecf
 
@@ -25,6 +27,33 @@ def main(argv): # pylint: disable=unused-argument
     """
 
     result = False
+
+
+    symbol = 'BTC/USDT' # pylint: disable=unused-variable
+    interval = '1mo' # pylint: disable=unused-variable
+
+    # __aux_class = BinanceEhdtdAuxClass
+    __aux_class = BybitEhdtdAuxClass
+    __aux_inst = __aux_class()
+
+    # __data = __aux_class.get_exchange_connectivity()
+    # pprint.pprint(__data, sort_dicts=False)
+
+    __data = __aux_class.get_symbol_first_year_month_listed(symbol, interval)
+    print(f'data: {__data}')
+
+    # __data = __aux_inst.get_exchange_info()
+    # pprint.pprint(__data, sort_dicts=False)
+    # print('+' * 80)
+
+    # __data = __aux_inst.get_exchange_full_list_symbols()
+    # pprint.pprint(__data, sort_dicts=False)
+    # print('+' * 80)
+
+    # __data = __aux_class.get_kline_data(symbol, interval, limit=5)
+    __data = __aux_inst.get_last_klines_candlestick_data(symbol, interval, start_time=None, limit=5)
+    pprint.pprint(__data, sort_dicts=False)
+    print('+' * 80)
 
 
     # Obtiene el manejador de registro raíz

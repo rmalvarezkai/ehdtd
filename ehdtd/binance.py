@@ -8,6 +8,7 @@ Date: 2023-10-31
 
 import json
 import time
+import datetime
 import io
 import urllib.request
 import csv
@@ -411,6 +412,8 @@ class BinanceEhdtdAuxClass():
                     and 200 <= result['code'] < 300\
                     and result['res_code'] is None:
                     result['result'] = True
+                    result['headers'] = None
+                    result['data'] = {}
                 else:
                     result['result'] = False
 
@@ -556,6 +559,23 @@ class BinanceEhdtdAuxClass():
 
                     if len(result) > 0:
                         result = result[:-1]
+
+        return result
+
+    @classmethod
+    def get_next_month_time_from_time(cls, time_ini):
+        """
+        get_next_month_time_from_time
+        =============================
+        """
+        result = 0
+        delta_time = 3600 * 24 * 32
+
+        next_time = time_ini + delta_time
+        __next_year = int(time.strftime("%Y", time.gmtime(next_time)))
+        __next_month = int(time.strftime("%m", time.gmtime(next_time)))
+
+        result = int(round(datetime.datetime(__next_year,__next_month, 1, 0, 0, 0, 0).timestamp()))
 
         return result
 

@@ -218,3 +218,58 @@ def months_ago_counter(from_year, from_month):
     result = (date_to.year - date_from.year) * 12 + date_to.month - date_from.month
 
     return result
+
+def compare_structure(var1, var2):
+    """
+    compare_structure
+    =================
+
+    """
+
+    basic_types = (int, float, str, bool)
+
+    if var1 is None and var2 is None:
+        return True
+
+    if isinstance(var1, basic_types) and isinstance(var2, basic_types):
+        return type(var1) == type(var2) # pylint:disable=unidiomatic-typecheck
+
+    if isinstance(var1, basic_types) and not isinstance(var2, basic_types):
+        return False
+    if not isinstance(var1, basic_types) and isinstance(var2, basic_types):
+        return False
+
+    if isinstance(var1, list) and isinstance(var2, list):
+        if len(var1) == 0 or len(var2) == 0:
+            return True
+        if len(var1) > 0 and len(var2) > 0:
+            return all([compare_structure(var1[0], var2_comp) for var2_comp in var2])
+
+        return False
+
+    if isinstance(var1, tuple) and isinstance(var2, tuple):
+        if len(var1) == len(var2):
+            __values_len = len(var1)
+            return all([compare_structure(var1[i], var2[i]) for i in range(0, __values_len)])
+
+        return False
+
+    if isinstance(var1, dict) and isinstance(var2, dict):
+        __keys_comp = set(var1.keys()) == set(var2.keys())
+
+        if __keys_comp:
+            __values1 = list(var1.values())
+            __values2 = list(var2.values())
+
+            if len(__values1) == len(__values2):
+                __values_len = len(__values1)
+                __res = [compare_structure(__values1[i], __values2[i])\
+                         for i in range(0, __values_len)]
+                return all(__res)
+
+            return False
+
+
+        return False
+
+    return False
