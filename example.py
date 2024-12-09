@@ -27,9 +27,10 @@ def main(argv): # pylint: disable=unused-argument
     result = 1
 
     exchange = 'binance'
+    exchange = 'bybit'
 
     debug = False
-    get_data = False
+    get_data = True
     check_data = False
     try_fix_data = False
     # get_data = True
@@ -43,9 +44,10 @@ def main(argv): # pylint: disable=unused-argument
     stop_flag_file = '/tmp/stop_getting_data.txt'
 
     symbols = ['BTC/USDT', 'BNB/USDT', 'ETH/USDT', 'LTC/USDT']
+    symbols = ['BTC/USDT', 'LTC/USDT']
 
     intervals = Ehdtd.get_supported_intervals(exchange)
-    intervals = ['1m', '3m', '5m', '15m', '3d']
+    intervals = ['1m', '5m']
 
     db_data = {}
     #db_data['db_type'] = 'mysql' # postgresql, mysql
@@ -61,7 +63,7 @@ def main(argv): # pylint: disable=unused-argument
 
     time_wait = 14
     time_limit = 450
-    time_limit = 720
+    time_limit = 7200
 
     fetch_data = []
 
@@ -181,7 +183,7 @@ def main(argv): # pylint: disable=unused-argument
         time.sleep(9)
 
     current_time = int(round(time.time()))
-    symbol = 'LTC/USDT'
+    symbol = 'BTC/USDT'
     interval = '1m'
     start_from = current_time - 7200
     start_from = 0

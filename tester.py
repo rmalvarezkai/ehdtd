@@ -9,16 +9,19 @@ Date: 2023-11-23
 
 import sys
 import time # pylint: disable=unused-import
+import datetime # pylint: disable=unused-import
 import os # pylint: disable=unused-import
 import logging # pylint: disable=unused-import
+import json # pylint: disable=unused-import
 
 import pprint # pylint: disable=unused-import
 
+import ccxt # pylint: disable=unused-import
 from ehdtd import Ehdtd # pylint: disable=unused-import
 from ehdtd.binance import BinanceEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.bybit import BybitEhdtdAuxClass # pylint: disable=unused-import
 # from ehdtd.binance import BinanceEhdtdAuxClass
-# import ehdtd.ehdtd_common_functions as ecf
+import ehdtd.ehdtd_common_functions as ecf # pylint: disable=unused-import
 
 def main(argv): # pylint: disable=unused-argument
     """
@@ -28,59 +31,90 @@ def main(argv): # pylint: disable=unused-argument
 
     result = False
 
-
     symbol = 'BTC/USDT' # pylint: disable=unused-variable
-    interval = '1mo' # pylint: disable=unused-variable
+    interval = '1m' # pylint: disable=unused-variable
+    # start_time = int(time.time() - (86400 * 365 * 3)) # pylint: disable=unused-variable
+    start_time = 1630454400
+    end_time = int(start_time + (86400 * 23)) # pylint: disable=unused-variable
+    limit = 1 # pylint: disable=unused-variable
+    trading_type = 'SPOT' # pylint: disable=unused-variable
 
-    # __aux_class = BinanceEhdtdAuxClass
-    __aux_class = BybitEhdtdAuxClass
-    __aux_inst = __aux_class()
+    post_data = None
+    headers = None
 
-    # __data = __aux_class.get_exchange_connectivity()
-    # pprint.pprint(__data, sort_dicts=False)
+    url = 'https://api.bybit.com/v5/market/kline?'
+    url += f'category=spot&symbol={symbol.replace("/", "")}'
+    url += f'&interval=1&limit={limit}&start={start_time}000'
+    print(f'url: {url}')
 
-    __data = __aux_class.get_symbol_first_year_month_listed(symbol, interval)
-    print(f'data: {__data}')
+    __data = ecf.file_get_contents_url(url, 'r', post_data, headers)
+    if ecf.is_json(__data):
+        __data = json.loads(__data)
 
-    # __data = __aux_inst.get_exchange_info()
-    # pprint.pprint(__data, sort_dicts=False)
-    # print('+' * 80)
-
-    # __data = __aux_inst.get_exchange_full_list_symbols()
-    # pprint.pprint(__data, sort_dicts=False)
-    # print('+' * 80)
-
-    # __data = __aux_class.get_kline_data(symbol, interval, limit=5)
-    __data = __aux_inst.get_last_klines_candlestick_data(symbol, interval, start_time=None, limit=5)
     pprint.pprint(__data, sort_dicts=False)
-    print('+' * 80)
+    print('=' * 80)
+    print('')
+
+    __aux_skel_class = BinanceEhdtdAuxClass
+    __aux_test_class = BybitEhdtdAuxClass
+    __aux_skel_inst = __aux_skel_class()
+    __aux_test_inst = __aux_test_class()
+
+    # __skel_data = __aux_skel_inst.get_last_klines_candlestick_data(symbol,\
+    #                                                                interval,\
+    #                                                                start_time,\
+    #                                                                limit)
+
+    # __test_data = __aux_test_inst.get_last_klines_candlestick_data(symbol,\
+    #                                                                interval,\
+    #                                                                start_time,\
+    #                                                                limit)
+
+    # __skel_data = __aux_skel_inst.get_symbol_first_year_month_listed(symbol,\
+    #                                                                  interval,\
+    #                                                                  trading_type=trading_type)
+
+    # pprint.pprint(__skel_data, sort_dicts=False)
+    # print('+' * 80)
+    # print()
+
+    __test_data = __aux_test_inst.get_symbol_first_year_month_listed(symbol,\
+                                                                     interval,\
+                                                                     trading_type=trading_type)
 
 
-    # Obtiene el manejador de registro raíz
-    # root_logger = logging.getLogger()
+    __year, __month = __test_data
 
-    # # Obtiene todos los manejadores de log registrados
-    # handlers = root_logger.handlers
+    start_time = int(round(datetime.datetime(__year, __month, 1, 0, 0, 0, 0).timestamp()))
 
-    # # Busca el primer manejador de archivo (FileHandler)
-    # file_handler = (
-    #     next((handler for handler in handlers if isinstance(handler, logging.FileHandler)), None)
-    # )
+    print(f'INICIO: {__year} - {__month} -> {start_time}')
 
-    # if file_handler:
-    #     # Obtiene la ruta del archivo de registro
-    #     log_file_path = file_handler.baseFilename
-    #     # Obtiene el directorio del archivo de registro
-    #     log_directory = os.path.dirname(log_file_path)
+    __test_data = __aux_test_inst.get_last_klines_candlestick_data(symbol,\
+                                                                   interval,\
+                                                                   start_time,\
+                                                                   limit)
 
-    #     print(f"Directorio de registro: {log_directory}")
-    # else:
-    #     print("No se encontró un manejador de archivo en la configuración de registro.")
+    pprint.pprint(__test_data, sort_dicts=False)
+    print('=' * 80)
+    print()
 
-    # Obtener el directorio de inicio del usuario
-    # log_file_path = Ehdtd.get_default_log_file()
 
-    # print(f"Directorio de log de ehdtd: {log_file_path}")
+    # pprint.pprint(__test_data, sort_dicts=False)
+    # print('+' * 80)
+    # print()
+
+    # __year, __month = __test_data
+    # start_time = int(round(datetime.datetime(__year, __month, 1, 0, 0, 0, 0).timestamp()))
+
+    # __test_data = __aux_test_inst.get_last_klines_candlestick_data(symbol,\
+    #                                                                interval,\
+    #                                                                start_time,\
+    #                                                                limit)
+    # pprint.pprint(__test_data, sort_dicts=False)
+    # print('+' * 80)
+    # print()
+
+
     return result
 
 

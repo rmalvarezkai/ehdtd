@@ -18,6 +18,7 @@ import datetime
 import calendar
 import hashlib
 import logging
+import pprint # pylint: disable=unused-import
 import schedule
 import sqlalchemy
 import pandas
@@ -26,6 +27,7 @@ from ccxw import Ccxw
 import ehdtd.ehdtd_common_functions as ecf
 from .binance import BinanceEhdtdAuxClass
 from .bybit import BybitEhdtdAuxClass
+from .okx import OkxEhdtdAuxClass
 
 class EhdtdExchangeConfig:
     """
@@ -41,7 +43,8 @@ class EhdtdExchangeConfig:
 
     exchange_classes = {
         'binance': BinanceEhdtdAuxClass,
-        'bybit': BybitEhdtdAuxClass
+        'bybit': BybitEhdtdAuxClass,
+        'okx': OkxEhdtdAuxClass
     }
 
 class Ehdtd(): # pylint: disable=too-many-instance-attributes
@@ -781,6 +784,13 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                         stmt = sqlalchemy.dialects.mysql.insert(table).values(data_out)
                         stmt = stmt.on_duplicate_key_update(**data_out)
 
+                    # pprint.pprint(data_out, sort_dicts=False)
+                    # print('=' * 80)
+                    # print()
+                    # print(stmt)
+                    # print('=' * 80)
+                    # print()
+
                     db_conn.execute(stmt)
                     if force_commit_after_stmt:
                         db_conn.commit()
@@ -944,6 +954,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         """
 
         result = 0
+
         table_name = self.__get_table_name(symbol, interval)
         column_name = "close_time"
 
@@ -973,6 +984,15 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                     if last_time is not None:
                         result = int(last_time)
+        if result == 0:
+
+            __year, __month = (
+                self.get_symbol_first_year_month_listed(symbol,\
+                                                        interval)
+            )
+
+            if __year is not None and __month is not None:
+                result = int(round(datetime.datetime(__year,__month, 1, 0, 0, 0, 0).timestamp()))
 
         return result
 
@@ -1953,6 +1973,10 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                                                                                      interval,\
                                                                                      __start_time)
 
+            # pprint.pprint(__hist_data, sort_dicts=False)
+            # print('=' * 80)
+            # print('')
+
             if __hist_data is not None:
                 if self.__exec_db_upsert_stmt(symbol, interval, __hist_data, db_conn):
                     str_out += ' -> YES'
@@ -1994,6 +2018,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
     def __init_db(self, symbol, interval, db_conn):
 
         result = True
+        if not self.__exchange_aux_class.has_historical_data_from_url_file():
+            return result
 
         __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
 
@@ -2051,6 +2077,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             __hist_data = None
 
             with self.__lock_thread_get_file:
+
                 __hist_data = (
                     self.__exchange_aux_class.get_historical_data_from_url_file(symbol,\
                                                                                 interval,\
@@ -2439,7 +2466,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                 :return: list of supported exchanges.
         """
-        __suported_exchanges = ['binance', 'bybit']
+        __suported_exchanges = ['binance', 'bybit', 'okx']
 
         return __suported_exchanges
 

@@ -124,6 +124,13 @@ class BinanceEhdtdAuxClass():
 
         return result
 
+    def has_historical_data_from_url_file(self):
+        """
+        has_historical_data_from_url_file
+        =================================
+        """
+        return True
+
     def get_historical_data_from_url_file(self, symbol, interval, year, month, day=None,\
                                           force_daily=False, trading_type='SPOT'):
         """

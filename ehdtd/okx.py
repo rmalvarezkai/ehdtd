@@ -1,6 +1,6 @@
 """
 Ehdtd - cryptoCurrency Exchange history data to database
-Bybit auxiliary functions
+Okx auxiliary functions
 
 Author: Ricardo Marcelo Alvarez
 Date: 2023-10-31
@@ -16,9 +16,9 @@ import calendar
 
 import ehdtd.ehdtd_common_functions as ecf
 
-class BybitEhdtdAuxClass():
+class OkxEhdtdAuxClass():
     """
-    Ehdtd - cryptoCurrency Exchange history data to database BybitEhdtdAuxClass
+    Ehdtd - cryptoCurrency Exchange history data to database OkxEhdtdAuxClass
     =============================================================================
         This class contains helper functions for the Ehdtd class.
 
@@ -26,12 +26,12 @@ class BybitEhdtdAuxClass():
 
     def __init__(self):
         """
-        BybitEhdtdAuxClass constructor
-        ================================
-            Initializes the BybitEhdtdAuxClass with the provided parameters.
+        OkxEhdtdAuxClass constructor
+        ============================
+            Initializes the OkxEhdtdAuxClass with the provided parameters.
 
-                :param self: BybitEhdtdAuxClass instance.
-                :return: Return a new instance of the Class BybitEhdtdAuxClass.
+                :param self: OkxEhdtdAuxClass instance.
+                :return: Return a new instance of the Class OkxEhdtdAuxClass.
         """
 
         self.__exchange_info_cache = {}
@@ -56,7 +56,7 @@ class BybitEhdtdAuxClass():
 
         if self.__exchange_info_cache['data'] is None:
 
-            __l_url_api = BybitEhdtdAuxClass.get_api_url()
+            __l_url_api = OkxEhdtdAuxClass.get_api_url()
             __l_endpoint = '/market/instruments-info'
             __l_url_point = f'{__l_url_api}{__l_endpoint}?'
             __l_url_point += f'category={trading_type.lower()}&limit=1000'
@@ -145,7 +145,7 @@ class BybitEhdtdAuxClass():
         get_historical_data_from_url_file
         =================================
 
-            :param self: BybitEhdtdAuxClass instance.
+            :param self: OkxEhdtdAuxClass instance.
             :param symbol: str unified symbol.
             :param interval: str.
             :param year: int. >=2018
@@ -164,7 +164,7 @@ class BybitEhdtdAuxClass():
         Ehdtd get_last_klines_candlestick_data function.
         ================================================
             This method return a list of last klines data.
-                :param self: BybitEhdtdAuxClass instance.
+                :param self: OkxEhdtdAuxClass instance.
                 :param symbol: str
                 :param interval: str
                 :param start_time: int unix timestamp if is None start_time is time.time() - 900
@@ -175,10 +175,10 @@ class BybitEhdtdAuxClass():
         """
         result = None
 
-        result = BybitEhdtdAuxClass.get_kline_data(symbol,\
-                                                   interval,\
-                                                   start_time=start_time,\
-                                                   limit=limit)
+        result = OkxEhdtdAuxClass.get_kline_data(symbol,\
+                                                 interval,\
+                                                 start_time=start_time,\
+                                                 limit=limit)
 
         return result
 
@@ -188,7 +188,7 @@ class BybitEhdtdAuxClass():
         get_api_url
         ===========
             This function set and return API URL.
-                :param cls: BybitEhdtdAuxClass Class.
+                :param cls: OkxEhdtdAuxClass Class.
                 :param trading_type: str only allowed 'SPOT'
                 :return str: Return API URL.
         """
@@ -196,7 +196,7 @@ class BybitEhdtdAuxClass():
 
         __url_api = None
         if trading_type == 'SPOT':
-            __url_api = 'https://api.bybit.com/v5'
+            __url_api = 'https://www.okx.com'
 
         result = __url_api
 
@@ -208,7 +208,7 @@ class BybitEhdtdAuxClass():
         get_exchange_connectivity
         =========================
             This function return a dict with connectivity information.
-                :param cls: BybitEhdtdAuxClass Class.
+                :param cls: OkxEhdtdAuxClass Class.
                 :return dict: result.
                     result = {
                         'result': bool, # True if connectivity is working False in other case.
@@ -302,12 +302,12 @@ class BybitEhdtdAuxClass():
         get_unified_symbol_from_symbol
         ==============================
             This function get unified symbol from symbol.
-                :param cls: BybitEhdtdAuxClass Class.
+                :param cls: OkxEhdtdAuxClass Class.
                 :param symbol: str.
                 :return str: Return unified symbol.
         """
         result = symbol
-        beac = BybitEhdtdAuxClass()
+        beac = OkxEhdtdAuxClass()
 
         full_list_symbols = beac.get_exchange_full_list_symbols(False)
 
@@ -326,13 +326,13 @@ class BybitEhdtdAuxClass():
         get_symbol_from_unified_symbol
         ==============================
             This function get unified interval from interval.
-                :param cls: BybitEhdtdAuxClass Class.
+                :param cls: OkxEhdtdAuxClass Class.
                 :param symbol: str unified symbol.
                 :return str: Return symbol.
         """
         result = symbol
 
-        beac = BybitEhdtdAuxClass()
+        beac = OkxEhdtdAuxClass()
 
         if symbol is not None\
             and isinstance(symbol, str)\
@@ -396,7 +396,7 @@ class BybitEhdtdAuxClass():
         get_kline_data
         ==============
             This function get the kline/candlestick API URL.
-                :param cls: BybitEhdtdAuxClass Class.
+                :param cls: OkxEhdtdAuxClass Class.
                 :param symbol: str
                 :param interval: str
                 :param start_time: float
@@ -409,12 +409,12 @@ class BybitEhdtdAuxClass():
 
         result = None
         unified_symbol = symbol
-        symbol = BybitEhdtdAuxClass.get_symbol_from_unified_symbol(symbol)
+        symbol = OkxEhdtdAuxClass.get_symbol_from_unified_symbol(symbol)
 
-        url_base = BybitEhdtdAuxClass.get_api_url(trading_type=trading_type)
+        url_base = OkxEhdtdAuxClass.get_api_url(trading_type=trading_type)
         default_endpoint = '/market/kline'
 
-        req_interval = BybitEhdtdAuxClass.get_interval_from_unified_interval(interval)
+        req_interval = OkxEhdtdAuxClass.get_interval_from_unified_interval(interval)
 
         url = f'{url_base}{default_endpoint}'
         url += f'?category={trading_type.lower()}&symbol={symbol}'
@@ -490,7 +490,7 @@ class BybitEhdtdAuxClass():
                             data_line['low'] = kline[3]
                             data_line['high'] = kline[2]
                             data_line['volume'] = kline[5]
-                            data_line['exchange'] = 'bybit'
+                            data_line['exchange'] = 'okx'
                             data_line['symbol'] = unified_symbol
                             data_line['interval'] = interval
                             result.append(data_line)
@@ -565,7 +565,7 @@ class BybitEhdtdAuxClass():
         get_symbol_first_year_month_listed
         ==================================
             This function set and return API URL.
-                :param cls: BybitEhdtdAuxClass Class.
+                :param cls: OkxEhdtdAuxClass Class.
                 :param symbol: str
                 :param interval: str
                 :param trading_type: str only allowed 'SPOT'
@@ -578,13 +578,13 @@ class BybitEhdtdAuxClass():
         __min_history_month = 1
 
         unified_symbol = symbol
-        symbol = BybitEhdtdAuxClass.get_symbol_from_unified_symbol(unified_symbol)
+        symbol = OkxEhdtdAuxClass.get_symbol_from_unified_symbol(unified_symbol)
         limit = 2
 
-        url_base = BybitEhdtdAuxClass.get_api_url(trading_type=trading_type)
+        url_base = OkxEhdtdAuxClass.get_api_url(trading_type=trading_type)
         default_endpoint = '/market/kline'
 
-        interval = BybitEhdtdAuxClass.get_interval_from_unified_interval(interval)
+        interval = OkxEhdtdAuxClass.get_interval_from_unified_interval(interval)
 
         url = f'{url_base}{default_endpoint}?'
         url += f'category={trading_type.lower()}&symbol={symbol}&interval={interval}&limit={limit}'
@@ -637,14 +637,14 @@ class BybitEhdtdAuxClass():
                             first_time = None
 
             if first_time is None:
-                start_time = BybitEhdtdAuxClass.get_next_month_time_from_time(start_time)
+                start_time = OkxEhdtdAuxClass.get_next_month_time_from_time(start_time)
 
         if first_time is None:
             result = (int(time.strftime("%Y", time.gmtime(current_time))),\
                         int(time.strftime("%m", time.gmtime(current_time))))
 
         else:
-            first_time = BybitEhdtdAuxClass.get_next_month_time_from_time(int(first_time))
+            first_time = OkxEhdtdAuxClass.get_next_month_time_from_time(int(first_time))
 
             result = (int(time.strftime("%Y", time.gmtime(first_time))),\
                         int(time.strftime("%m", time.gmtime(first_time))))
@@ -657,7 +657,7 @@ class BybitEhdtdAuxClass():
         Ehdtd get_supported_intervals function.
         =======================================
             This method return a list of not daily data for this intervals.
-                :param cls: BybitEhdtdAuxClass Class.
+                :param cls: OkxEhdtdAuxClass Class.
 
                 :return: list of not daily data intervals
         """
@@ -671,7 +671,7 @@ class BybitEhdtdAuxClass():
         Ehdtd get_supported_intervals function.
         =======================================
             This method return a list of supported intervals.
-                :param cls: BybitEhdtdAuxClass Class.
+                :param cls: OkxEhdtdAuxClass Class.
 
                 :return: list of supported intervals.
         """
