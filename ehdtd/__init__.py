@@ -9,10 +9,12 @@ from os.path import dirname, basename, isfile, join
 import glob
 import sys
 import importlib.metadata
-from .binance import BinanceEhdtdAuxClass
-from .bybit import BybitEhdtdAuxClass
-from .okx import OkxEhdtdAuxClass
-from .ehdtd import Ehdtd, EhdtdRO, EhdtdExchangeConfig
+from ehdtd.binance import BinanceEhdtdAuxClass
+from ehdtd.bybit import BybitEhdtdAuxClass
+from ehdtd.okx import OkxEhdtdAuxClass
+from ehdtd.kucoin import KucoinEhdtdAuxClass
+from ehdtd.bingx import BingxEhdtdAuxClass
+from ehdtd.ehdtd import Ehdtd, EhdtdRO, EhdtdExchangeConfig
 
 ehdtd_metadata = importlib.metadata.metadata('ehdtd')
 

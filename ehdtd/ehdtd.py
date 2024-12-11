@@ -25,9 +25,11 @@ import pandas
 from ccxw import Ccxw
 
 import ehdtd.ehdtd_common_functions as ecf
-from .binance import BinanceEhdtdAuxClass
-from .bybit import BybitEhdtdAuxClass
-from .okx import OkxEhdtdAuxClass
+from ehdtd.binance import BinanceEhdtdAuxClass
+from ehdtd.bybit import BybitEhdtdAuxClass
+from ehdtd.okx import OkxEhdtdAuxClass
+from ehdtd.kucoin import KucoinEhdtdAuxClass
+from ehdtd.bingx import BingxEhdtdAuxClass
 
 class EhdtdExchangeConfig:
     """
@@ -44,7 +46,9 @@ class EhdtdExchangeConfig:
     exchange_classes = {
         'binance': BinanceEhdtdAuxClass,
         'bybit': BybitEhdtdAuxClass,
-        'okx': OkxEhdtdAuxClass
+        'okx': OkxEhdtdAuxClass,
+        'kucoin': KucoinEhdtdAuxClass,
+        'bingx': BingxEhdtdAuxClass
     }
 
 class Ehdtd(): # pylint: disable=too-many-instance-attributes
@@ -2466,7 +2470,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                 :return: list of supported exchanges.
         """
-        __suported_exchanges = ['binance', 'bybit', 'okx']
+        __suported_exchanges = ['binance', 'bybit', 'okx', 'kucoin', 'bingx']
 
         return __suported_exchanges
 

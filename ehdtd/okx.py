@@ -57,18 +57,23 @@ class OkxEhdtdAuxClass():
         if self.__exchange_info_cache['data'] is None:
 
             __l_url_api = OkxEhdtdAuxClass.get_api_url()
-            __l_endpoint = '/market/instruments-info'
+            __l_endpoint = '/api/v5/public/instruments'
             __l_url_point = f'{__l_url_api}{__l_endpoint}?'
-            __l_url_point += f'category={trading_type.lower()}&limit=1000'
+            __l_url_point += f'instType={trading_type.upper()}'
 
             post_data = None
-            headers = None
+            headers = {
+                'User-Agent': 'Ehdtd - cryptoCurrency Exchange history data to database'
+            }
 
             __data = ecf.file_get_contents_url(__l_url_point, 'r', post_data, headers)
 
             if __data is not None and ecf.is_json(__data):
-                result = json.loads(__data)
-                if result is not None and isinstance(result, dict):
+                __data = json.loads(__data)
+                if __data is not None and isinstance(__data, dict)\
+                    and 'code' in __data and 'data' in __data\
+                    and int(__data['code']) == 0:
+                    result = __data
                     self.__exchange_info_cache['data'] = result
                     self.__exchange_info_cache['last_get_time'] = current_time
 
@@ -90,19 +95,19 @@ class OkxEhdtdAuxClass():
         __main_data = self.get_exchange_info()
 
         if __main_data is not None and isinstance(__main_data, dict)\
-            and 'retCode' in __main_data and isinstance(__main_data['retCode'], int)\
-                and __main_data['retCode'] == 0:
+            and __main_data['data'] is not None\
+            and isinstance(__main_data['data'], list):
 
             try:
                 result = []
-                for symbol_data in __main_data['result']['list']:
+                for symbol_data in __main_data['data']:
                     if symbol_data is not None and isinstance(symbol_data, dict):
-                        if 'baseCoin' in symbol_data and 'quoteCoin' in symbol_data\
-                            and isinstance(symbol_data['baseCoin'],str)\
-                            and isinstance(symbol_data['quoteCoin'],str):
+                        if 'baseCcy' in symbol_data and 'quoteCcy' in symbol_data\
+                            and isinstance(symbol_data['baseCcy'],str)\
+                            and isinstance(symbol_data['quoteCcy'],str):
                             result.append(\
-                                symbol_data['baseCoin'].upper() + '/'\
-                                    + symbol_data['quoteCoin'].upper())
+                                symbol_data['baseCcy'].upper() + '/'\
+                                    + symbol_data['quoteCcy'].upper())
 
                 if sort_list:
                     result.sort()
@@ -217,11 +222,15 @@ class OkxEhdtdAuxClass():
                     }
         """
         result = None
-        headers = {}
+
+        headers = {
+            'User-Agent': 'Ehdtd - cryptoCurrency Exchange history data to database'
+        }
+
         timeout = 45
 
         __url_api = cls.get_api_url()
-        __endpoint = '/market/time'
+        __endpoint = '/api/v5/public/time'
         __url = f'{__url_api}{__endpoint}'
 
         req = urllib.request.Request(__url, None, headers)
@@ -262,23 +271,17 @@ class OkxEhdtdAuxClass():
                 if hasattr(exc, 'url'):
                     result['final_url'] = exc.url
 
-            if result is not None\
-                and isinstance(result, dict)\
-                and 'data' in result:
-
-                if isinstance(result['data'], bytes):
-                    result['data'] = result['data'].decode()
-
+            if result is not None:
                 if ecf.is_json(result['data']):
                     result['data'] = json.loads(result['data'])
 
                     if result['data'] is not None and isinstance(result['data'], dict):
-                        if 'retCode' in result['data']:
-                            result['res_code'] = result['data']['retCode']
-                        if 'retMsg' in result['data']:
-                            result['res_msg'] = result['data']['retMsg']
-                            if isinstance(result['res_msg'], bytes):
-                                result['res_msg'] = result['res_msg'].decode()
+                        if 'code' in result['data']:
+                            result['res_code'] = int(result['data']['code'])
+                        if 'msg' in result['data']:
+                            result['res_msg'] = result['data']['msg']
+                            if isinstance(result['data']['msg'], bytes):
+                                result['res_msg'] = result['data']['msg'].decode()
 
                 if result['code'] is not None\
                     and isinstance(result['code'], int)\
@@ -314,7 +317,7 @@ class OkxEhdtdAuxClass():
         if full_list_symbols is not None and isinstance(full_list_symbols, list):
             for symbol_rpl in full_list_symbols:
                 if symbol_rpl is not None\
-                    and symbol.replace('/', '').lower() == symbol_rpl.replace('/', '').lower():
+                    and symbol.replace('-', '').lower() == symbol_rpl.replace('/', '').lower():
                     result = symbol_rpl
                     break
 
@@ -338,7 +341,7 @@ class OkxEhdtdAuxClass():
             and isinstance(symbol, str)\
             and len(symbol) > 0\
             and beac.if_symbol_supported(symbol):
-            result = symbol.replace('/', '').upper()
+            result = symbol.replace('/', '-').upper()
             result = str(result)
 
         return result
@@ -389,7 +392,7 @@ class OkxEhdtdAuxClass():
                        interval,\
                        start_time: float=None,\
                        end_time: float=None,\
-                       limit: int=1000,\
+                       limit: int=100,\
                        default_endpoint: str='uiKlines',\
                        trading_type: str='SPOT'):
         """
@@ -412,27 +415,49 @@ class OkxEhdtdAuxClass():
         symbol = OkxEhdtdAuxClass.get_symbol_from_unified_symbol(symbol)
 
         url_base = OkxEhdtdAuxClass.get_api_url(trading_type=trading_type)
-        default_endpoint = '/market/kline'
 
         req_interval = OkxEhdtdAuxClass.get_interval_from_unified_interval(interval)
-
-        url = f'{url_base}{default_endpoint}'
-        url += f'?category={trading_type.lower()}&symbol={symbol}'
-        url += f'&interval={req_interval}&limit={limit}'
 
         start_time_out = ''
         end_time_out = ''
 
-        if start_time is not None and isinstance(start_time, (int,float)) and start_time >= 0:
-            start_time = int(round(start_time * 1000))
-            start_time_out = f'&start={start_time}'
+        __delta_time = cls.get_delta_time_from_interval(interval)
+
+        __last_data = False
+
+        if start_time is not None and isinstance(start_time, (int,float)):
+            start_time = max(start_time, 0)
+            start_time_cmp = round(time.time()) - (250 * __delta_time)
+
+            if start_time >= start_time_cmp:
+                __last_data = True
+
+            start_time = int(round(start_time))
+            start_time_out = f'&before={start_time}000'
+
+        if __last_data:
+            limit = min(limit, 300)
+        else:
+            limit = min(limit, 100)
 
         if end_time is not None\
-            and isinstance(end_time, (int,float))\
+            and isinstance(end_time, (int, float, str))\
             and end_time >= 0\
             and end_time > start_time:
             end_time = int(round(end_time * 1000))
-            end_time_out = f'&end={end_time}'
+            end_time_out = f'&after={end_time}'
+        elif len(start_time_out) > 0:
+            end_time = start_time + (__delta_time * limit)
+            end_time_out = f'&after={int(end_time)}000'
+
+        default_endpoint = '/api/v5/market/history-candles'
+        if __last_data:
+            default_endpoint = '/api/v5/market/candles'
+
+
+        url = f'{url_base}{default_endpoint}'
+        url += f'?instType={trading_type.upper()}&instId={symbol}'
+        url += f'&bar={req_interval}&limit={limit}'
 
         url += f'{start_time_out}{end_time_out}'
 
@@ -442,7 +467,9 @@ class OkxEhdtdAuxClass():
         __max_attemp = 9
         req_data = None
         post_data = None
-        headers = None
+        headers = {
+            'User-Agent': 'Ehdtd - cryptoCurrency Exchange history data to database'
+        }
 
         while __attemp < __max_attemp and not (req_data is not None and isinstance(req_data, dict)):
             req_data = ecf.file_get_contents_url(url, 'r', post_data, headers)
@@ -455,14 +482,14 @@ class OkxEhdtdAuxClass():
         if req_data is not None and isinstance(req_data, dict):
 
             try:
-                __data = req_data['result']['list']
+                __data = req_data['data']
 
                 if __data is not None and isinstance(__data, list):
                     result = []
                     __delta_time = cls.get_delta_time_from_interval(interval)
 
                     for kline in __data:
-                        if kline is not None and isinstance(kline, list) and len(kline) >= 7:
+                        if kline is not None and isinstance(kline, list) and len(kline) >= 8:
                             data_line = None
                             data_line = {}
                             data_line['open_time'] = int(round(int(kline[0])/1000))
@@ -493,13 +520,15 @@ class OkxEhdtdAuxClass():
                             data_line['exchange'] = 'okx'
                             data_line['symbol'] = unified_symbol
                             data_line['interval'] = interval
-                            result.append(data_line)
+
+                            if int(kline[8]) == 1:
+                                result.append(data_line)
 
                     if len(result) > 1:
                         result.reverse()
-                        result = result[:-1]
 
-            except Exception: # pylint: disable=broad-except
+            except Exception as e: # pylint: disable=broad-except
+                print(f'ERROR: {e}')
                 result = None
 
         return result
@@ -513,20 +542,24 @@ class OkxEhdtdAuxClass():
         """
         result = None
 
+        # e.g. [1s/1m/3m/5m/15m/30m/1H/2H/4H]
+        # Hong Kong time opening price k-line: [6H/12H/1D/2D/3D/1W/1M/3M]
+        # UTC time opening price k-line: [6Hutc/12Hutc/1Dutc/2Dutc/3Dutc/1Wutc/1Mutc/3Mutc]
         __intervals_map = {
-            '1m': 1,
-            '3m': 3,
-            '5m': 5,
-            '15m': 15,
-            '30m': 30,
-            '1h': 60,
-            '2h': 120,
-            '4h': 240,
-            '6h': 360,
-            '12h': 720,
-            '1d': 'D',
-            '1w': 'W',
-            '1mo': 'M'
+            '1m': '1m',
+            '3m': '3m',
+            '5m': '5m',
+            '15m': '15m',
+            '30m': '30m',
+            '1h': '1H',
+            '2h': '2H',
+            '4h': '4H',
+            '6h': '6Hutc',
+            '12h': '12Hutc',
+            '1d': '1Dutc',
+            '3d': '3Dutc',
+            '1w': '1Wutc',
+            '1mo': '1Mutc'
         }
 
         if interval in __intervals_map:
@@ -582,13 +615,13 @@ class OkxEhdtdAuxClass():
         limit = 2
 
         url_base = OkxEhdtdAuxClass.get_api_url(trading_type=trading_type)
-        default_endpoint = '/market/kline'
+        default_endpoint = '/api/v5/market/history-candles'
 
         interval = OkxEhdtdAuxClass.get_interval_from_unified_interval(interval)
 
         url = f'{url_base}{default_endpoint}?'
-        url += f'category={trading_type.lower()}&symbol={symbol}&interval={interval}&limit={limit}'
-        url += '&start='
+        url += f'instType={trading_type.lower()}&instId={symbol}&bar={interval}&limit={limit}'
+        url += '&after='
 
         current_time = int(round(time.time()))
 
@@ -608,7 +641,9 @@ class OkxEhdtdAuxClass():
             __max_attemp = 9
             req_data = None
             post_data = None
-            headers = None
+            headers = {
+                'User-Agent': 'Ehdtd - cryptoCurrency Exchange history data to database'
+            }
 
             while __attemp < __max_attemp\
                 and not (req_data is not None and isinstance(req_data, dict)):
@@ -621,23 +656,20 @@ class OkxEhdtdAuxClass():
                 __attemp += 1
 
             if req_data is not None and isinstance(req_data, dict):
-                if 'retCode' in req_data\
-                    and int(req_data['retCode']) == 0\
-                    and 'result' in req_data\
-                    and isinstance(req_data['result'], dict):
+                if 'code' in req_data\
+                    and int(req_data['code']) == 0\
+                    and 'data' in req_data\
+                    and isinstance(req_data['data'], list):
 
-                    if 'list' in req_data['result']\
-                        and isinstance(req_data['result']['list'], list)\
-                        and len(req_data['result']['list']) > 0:
+                    try:
+                        first_time = int(round(int(req_data['data'][-1][0]) / 1000))
 
-                        try:
-                            first_time = int(round(int(req_data['result']['list'][-1][0]) / 1000))
-
-                        except Exception: # pylint: disable=broad-except
-                            first_time = None
+                    except Exception: # pylint: disable=broad-except
+                        first_time = None
 
             if first_time is None:
                 start_time = OkxEhdtdAuxClass.get_next_month_time_from_time(start_time)
+            time.sleep(0.1)
 
         if first_time is None:
             result = (int(time.strftime("%Y", time.gmtime(current_time))),\
@@ -677,6 +709,6 @@ class OkxEhdtdAuxClass():
         """
 
         __result = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h',\
-                    '6h', '12h', '1d', '1w', '1mo']
+                    '6h', '12h', '1d', '3d','1w', '1mo']
 
         return __result

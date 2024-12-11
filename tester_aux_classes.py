@@ -16,6 +16,9 @@ import pprint # pylint: disable=unused-import
 from ehdtd import Ehdtd # pylint: disable=unused-import
 from ehdtd.binance import BinanceEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.bybit import BybitEhdtdAuxClass # pylint: disable=unused-import
+from ehdtd.okx import OkxEhdtdAuxClass # pylint: disable=unused-import
+from ehdtd.kucoin import KucoinEhdtdAuxClass # pylint: disable=unused-import
+from ehdtd.bingx import BingxEhdtdAuxClass # pylint: disable=unused-import
 
 import ehdtd.ehdtd_common_functions as ecf
 
@@ -63,7 +66,7 @@ def main(argv): # pylint: disable=unused-argument
     sort_list = True
     symbol = 'BTC/USDT' # pylint: disable=unused-variable
     interval = '1mo' # pylint: disable=unused-variable
-    interval = '1h' # pylint: disable=unused-variable
+    interval = '1m' # pylint: disable=unused-variable
     start_time = None
     end_time = None
     limit = 1000
@@ -165,6 +168,16 @@ def main(argv): # pylint: disable=unused-argument
         'type': 'class'
     }
 
+    __func_add = {
+        'function': 'get_delta_time_from_interval',
+        'params': {
+            'interval': interval,
+            'year': 1980,
+            'month': 10
+        },
+        'type': 'class'
+    }
+
     __test_functions.append(__func_add)
 
     __func_add = {
@@ -180,6 +193,18 @@ def main(argv): # pylint: disable=unused-argument
             {
                 'class_name': 'BybitEhdtdAuxClass',
                 'class': BybitEhdtdAuxClass
+            },
+            {
+                'class_name': 'OkxEhdtdAuxClass',
+                'class': OkxEhdtdAuxClass
+            },
+            {
+                'class_name': 'KucoinEhdtdAuxClass',
+                'class': KucoinEhdtdAuxClass
+            },
+            {
+                'class_name': 'BingxEhdtdAuxClass',
+                'class': BingxEhdtdAuxClass
             }
         ]
 

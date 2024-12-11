@@ -28,6 +28,9 @@ def main(argv): # pylint: disable=unused-argument
 
     exchange = 'binance'
     exchange = 'bybit'
+    exchange = 'okx'
+    exchange = 'kucoin'
+    exchange = 'bingx'
 
     debug = False
     get_data = True
@@ -63,7 +66,7 @@ def main(argv): # pylint: disable=unused-argument
 
     time_wait = 14
     time_limit = 450
-    time_limit = 7200
+    time_limit = 14400
 
     fetch_data = []
 

@@ -418,7 +418,7 @@ class BybitEhdtdAuxClass():
 
         url = f'{url_base}{default_endpoint}'
         url += f'?category={trading_type.lower()}&symbol={symbol}'
-        url += f'&interval={req_interval}&limit={limit}'
+        url += f'&interval={req_interval}&limit={int(limit) + 1}'
 
         start_time_out = ''
         end_time_out = ''
@@ -428,9 +428,9 @@ class BybitEhdtdAuxClass():
             start_time_out = f'&start={start_time}'
 
         if end_time is not None\
-            and isinstance(end_time, (int,float))\
-            and end_time >= 0\
-            and end_time > start_time:
+            and isinstance(end_time, (int, float, str))\
+            and int(end_time) >= 0\
+            and int(end_time * 1000) > int(start_time):
             end_time = int(round(end_time * 1000))
             end_time_out = f'&end={end_time}'
 
@@ -638,6 +638,8 @@ class BybitEhdtdAuxClass():
 
             if first_time is None:
                 start_time = BybitEhdtdAuxClass.get_next_month_time_from_time(start_time)
+
+            time.sleep(0.1)
 
         if first_time is None:
             result = (int(time.strftime("%Y", time.gmtime(current_time))),\
