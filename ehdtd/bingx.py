@@ -38,7 +38,7 @@ class BingxEhdtdAuxClass():
         self.__exchange_info_cache['data'] = None
         self.__exchange_info_cache['last_get_time'] = 0
 
-    def get_exchange_info(self, trading_type='SPOT'):
+    def get_exchange_info(self, trading_type='SPOT'): # pylint: disable=unused-argument
         """
         get_exchange_info
         =================
@@ -57,9 +57,10 @@ class BingxEhdtdAuxClass():
         if self.__exchange_info_cache['data'] is None:
 
             __l_url_api = BingxEhdtdAuxClass.get_api_url()
-            __l_endpoint = '/market/instruments-info'
+            __l_endpoint = '/openApi/spot/v1/common/symbols'
             __l_url_point = f'{__l_url_api}{__l_endpoint}?'
-            __l_url_point += f'category={trading_type.lower()}&limit=1000'
+            __timestamp = int(round(time.time() * 1000))
+            __l_url_point += f'timestamp={__timestamp}'
 
             post_data = None
             headers = None
@@ -67,11 +68,16 @@ class BingxEhdtdAuxClass():
             __data = ecf.file_get_contents_url(__l_url_point, 'r', post_data, headers)
 
             if __data is not None and ecf.is_json(__data):
-                result = json.loads(__data)
-                if result is not None and isinstance(result, dict):
-                    self.__exchange_info_cache['data'] = result
+                __result_tmp = json.loads(__data)
+                if __result_tmp is not None\
+                    and isinstance(__result_tmp, dict)\
+                    and 'code' in __result_tmp\
+                    and __result_tmp['code'] is not None\
+                    and isinstance(__result_tmp['code'], (int, str))\
+                    and 'data' in __result_tmp:
+                    self.__exchange_info_cache['data'] = __result_tmp
                     self.__exchange_info_cache['last_get_time'] = current_time
-
+                    result = __result_tmp
         else:
             result = self.__exchange_info_cache['data']
 
@@ -90,19 +96,19 @@ class BingxEhdtdAuxClass():
         __main_data = self.get_exchange_info()
 
         if __main_data is not None and isinstance(__main_data, dict)\
-            and 'retCode' in __main_data and isinstance(__main_data['retCode'], int)\
-                and __main_data['retCode'] == 0:
+            and __main_data['data'] is not None\
+            and isinstance(__main_data['data'], dict)\
+            and 'symbols' in __main_data['data']\
+            and __main_data['data']['symbols'] is not None\
+            and isinstance(__main_data['data']['symbols'], list):
 
             try:
                 result = []
-                for symbol_data in __main_data['result']['list']:
+                for symbol_data in __main_data['data']['symbols']:
                     if symbol_data is not None and isinstance(symbol_data, dict):
-                        if 'baseCoin' in symbol_data and 'quoteCoin' in symbol_data\
-                            and isinstance(symbol_data['baseCoin'],str)\
-                            and isinstance(symbol_data['quoteCoin'],str):
-                            result.append(\
-                                symbol_data['baseCoin'].upper() + '/'\
-                                    + symbol_data['quoteCoin'].upper())
+                        if 'symbol' in symbol_data\
+                            and isinstance(symbol_data['symbol'],str):
+                            result.append(symbol_data['symbol'].replace('-', '/'))
 
                 if sort_list:
                     result.sort()
@@ -221,7 +227,7 @@ class BingxEhdtdAuxClass():
         timeout = 45
 
         __url_api = cls.get_api_url()
-        __endpoint = '/market/time'
+        __endpoint = '/openApi/spot/v1/server/time'
         __url = f'{__url_api}{__endpoint}'
 
         req = urllib.request.Request(__url, None, headers)
@@ -273,10 +279,10 @@ class BingxEhdtdAuxClass():
                     result['data'] = json.loads(result['data'])
 
                     if result['data'] is not None and isinstance(result['data'], dict):
-                        if 'retCode' in result['data']:
-                            result['res_code'] = result['data']['retCode']
-                        if 'retMsg' in result['data']:
-                            result['res_msg'] = result['data']['retMsg']
+                        if 'code' in result['data']:
+                            result['res_code'] = result['data']['code']
+                        if 'msg' in result['data']:
+                            result['res_msg'] = result['data']['msg']
                             if isinstance(result['res_msg'], bytes):
                                 result['res_msg'] = result['res_msg'].decode()
 
@@ -314,7 +320,7 @@ class BingxEhdtdAuxClass():
         if full_list_symbols is not None and isinstance(full_list_symbols, list):
             for symbol_rpl in full_list_symbols:
                 if symbol_rpl is not None\
-                    and symbol.replace('/', '').lower() == symbol_rpl.replace('/', '').lower():
+                    and symbol.replace('/', '-').lower() == symbol_rpl.replace('/', '-').lower():
                     result = symbol_rpl
                     break
 
@@ -338,7 +344,7 @@ class BingxEhdtdAuxClass():
             and isinstance(symbol, str)\
             and len(symbol) > 0\
             and beac.if_symbol_supported(symbol):
-            result = symbol.replace('/', '').upper()
+            result = symbol.replace('/', '-').upper()
             result = str(result)
 
         return result
@@ -389,7 +395,7 @@ class BingxEhdtdAuxClass():
                        interval,\
                        start_time: float=None,\
                        end_time: float=None,\
-                       limit: int=1000,\
+                       limit: int=500,\
                        default_endpoint: str='uiKlines',\
                        trading_type: str='SPOT'):
         """
@@ -412,27 +418,30 @@ class BingxEhdtdAuxClass():
         symbol = BingxEhdtdAuxClass.get_symbol_from_unified_symbol(symbol)
 
         url_base = BingxEhdtdAuxClass.get_api_url(trading_type=trading_type)
-        default_endpoint = '/market/kline'
+        default_endpoint = '/openApi/market/his/v1/kline'
+        # default_endpoint = '/openApi/spot/v2/market/kline'
 
         req_interval = BingxEhdtdAuxClass.get_interval_from_unified_interval(interval)
 
+        limit = min(limit, 500)
+
         url = f'{url_base}{default_endpoint}'
-        url += f'?category={trading_type.lower()}&symbol={symbol}'
-        url += f'&interval={req_interval}&limit={int(limit) + 1}'
+        url += f'?symbol={symbol}&interval={req_interval}'
+        url += f'&limit={int(limit)}'
 
         start_time_out = ''
         end_time_out = ''
 
         if start_time is not None and isinstance(start_time, (int,float)) and start_time >= 0:
             start_time = int(round(start_time * 1000))
-            start_time_out = f'&start={start_time}'
+            start_time_out = f'&startTime={start_time}'
 
         if end_time is not None\
             and isinstance(end_time, (int, float, str))\
             and int(end_time) >= 0\
             and int(end_time * 1000) > int(start_time):
             end_time = int(round(end_time * 1000))
-            end_time_out = f'&end={end_time}'
+            end_time_out = f'&endTime={end_time}'
 
         url += f'{start_time_out}{end_time_out}'
 
@@ -455,14 +464,13 @@ class BingxEhdtdAuxClass():
         if req_data is not None and isinstance(req_data, dict):
 
             try:
-                __data = req_data['result']['list']
+                __data = req_data['data']
 
                 if __data is not None and isinstance(__data, list):
                     result = []
-                    __delta_time = cls.get_delta_time_from_interval(interval)
 
                     for kline in __data:
-                        if kline is not None and isinstance(kline, list) and len(kline) >= 7:
+                        if kline is not None and isinstance(kline, list) and len(kline) >= 8:
                             data_line = None
                             data_line = {}
                             data_line['open_time'] = int(round(int(kline[0])/1000))
@@ -470,26 +478,16 @@ class BingxEhdtdAuxClass():
                                                                    time.gmtime(\
                                                                        data_line['open_time']))
 
-                            if interval == '1mo':
-                                year = int(time.strftime("%Y", time.gmtime(data_line['open_time'])))
-                                month = (
-                                    int(time.strftime("%m", time.gmtime(data_line['open_time'])))
-                                )
 
-                                __delta_time = (
-                                    cls.get_delta_time_from_interval(interval, year, month)
-                                )
-
-                            __close_time = data_line['open_time'] + __delta_time
-                            data_line['open_price'] = kline[1]
-                            data_line['close_time'] = int(__close_time)
+                            data_line['open_price'] = str(kline[1])
+                            data_line['close_time'] = int(round(int(kline[6])/1000))
                             data_line['close_date'] = time.strftime("%Y-%m-%d %H:%M:%S",\
                                                                     time.gmtime(\
                                                                         data_line['close_time']))
-                            data_line['close_price'] = kline[4]
-                            data_line['low'] = kline[3]
-                            data_line['high'] = kline[2]
-                            data_line['volume'] = kline[5]
+                            data_line['close_price'] = str(kline[4])
+                            data_line['low'] = str(kline[3])
+                            data_line['high'] = str(kline[2])
+                            data_line['volume'] = str(kline[5])
                             data_line['exchange'] = 'bingx'
                             data_line['symbol'] = unified_symbol
                             data_line['interval'] = interval
@@ -514,19 +512,21 @@ class BingxEhdtdAuxClass():
         result = None
 
         __intervals_map = {
-            '1m': 1,
-            '3m': 3,
-            '5m': 5,
-            '15m': 15,
-            '30m': 30,
-            '1h': 60,
-            '2h': 120,
-            '4h': 240,
-            '6h': 360,
-            '12h': 720,
-            '1d': 'D',
-            '1w': 'W',
-            '1mo': 'M'
+            '1m': '1m',
+            '3m': '3m',
+            '5m': '5m',
+            '15m': '15m',
+            '30m': '30m',
+            '1h': '1h',
+            '2h': '2h',
+            '4h': '4h',
+            '6h': '6h',
+            '8h': '8h',
+            '12h': '12h',
+            '1d': '1d',
+            '3d': '3d',
+            '1w': '1w',
+            '1mo': '1M'
         }
 
         if interval in __intervals_map:
@@ -574,21 +574,21 @@ class BingxEhdtdAuxClass():
         """
         result = None
 
-        __min_history_year = 2018
-        __min_history_month = 1
+        __min_history_year = 2023
+        __min_history_month = 12
 
         unified_symbol = symbol
         symbol = BingxEhdtdAuxClass.get_symbol_from_unified_symbol(unified_symbol)
         limit = 2
 
         url_base = BingxEhdtdAuxClass.get_api_url(trading_type=trading_type)
-        default_endpoint = '/market/kline'
+        default_endpoint = '/openApi/market/his/v1/kline'
 
         interval = BingxEhdtdAuxClass.get_interval_from_unified_interval(interval)
 
         url = f'{url_base}{default_endpoint}?'
-        url += f'category={trading_type.lower()}&symbol={symbol}&interval={interval}&limit={limit}'
-        url += '&start='
+        url += f'symbol={symbol}&interval={interval}&limit={limit}'
+        url += '&endTime='
 
         current_time = int(round(time.time()))
 
@@ -621,23 +621,19 @@ class BingxEhdtdAuxClass():
                 __attemp += 1
 
             if req_data is not None and isinstance(req_data, dict):
-                if 'retCode' in req_data\
-                    and int(req_data['retCode']) == 0\
-                    and 'result' in req_data\
-                    and isinstance(req_data['result'], dict):
+                if 'code' in req_data\
+                    and int(req_data['code']) == 0\
+                    and 'data' in req_data\
+                    and isinstance(req_data['data'], list)\
+                    and len(req_data['data']) > 0:
 
-                    if 'list' in req_data['result']\
-                        and isinstance(req_data['result']['list'], list)\
-                        and len(req_data['result']['list']) > 0:
+                    try:
+                        first_time = int(round(int(req_data['data'][-1][0]) / 1000))
 
-                        try:
-                            first_time = int(round(int(req_data['result']['list'][-1][0]) / 1000))
-
-                        except Exception: # pylint: disable=broad-except
-                            first_time = None
-
-            if first_time is None:
-                start_time = BingxEhdtdAuxClass.get_next_month_time_from_time(start_time)
+                    except Exception: # pylint: disable=broad-except
+                        first_time = None
+                else:
+                    start_time = cls.get_next_month_time_from_time(start_time)
 
             time.sleep(0.1)
 
@@ -646,8 +642,7 @@ class BingxEhdtdAuxClass():
                         int(time.strftime("%m", time.gmtime(current_time))))
 
         else:
-            first_time = BingxEhdtdAuxClass.get_next_month_time_from_time(int(first_time))
-
+            first_time = cls.get_next_month_time_from_time(int(first_time))
             result = (int(time.strftime("%Y", time.gmtime(first_time))),\
                         int(time.strftime("%m", time.gmtime(first_time))))
 
@@ -679,6 +674,6 @@ class BingxEhdtdAuxClass():
         """
 
         __result = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h',\
-                    '6h', '12h', '1d', '1w', '1mo']
+                    '6h', '8h', '12h', '1d', '3d', '1w', '1mo']
 
         return __result
