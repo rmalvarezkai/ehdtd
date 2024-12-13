@@ -410,6 +410,7 @@ class BybitEhdtdAuxClass():
         result = None
         unified_symbol = symbol
         symbol = BybitEhdtdAuxClass.get_symbol_from_unified_symbol(symbol)
+        limit = min(limit, 1000)
 
         url_base = BybitEhdtdAuxClass.get_api_url(trading_type=trading_type)
         default_endpoint = '/market/kline'

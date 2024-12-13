@@ -539,6 +539,7 @@ class BinanceEhdtdAuxClass():
         result = None
         unified_symbol = symbol
         symbol = BinanceEhdtdAuxClass.get_symbol_from_unified_symbol(symbol)
+        limit = min(limit, 1000)
 
         if default_endpoint not in ['klines', 'uiKlines']:
             default_endpoint = 'uiKlines'

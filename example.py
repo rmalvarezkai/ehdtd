@@ -47,10 +47,11 @@ def main(argv): # pylint: disable=unused-argument
     stop_flag_file = '/tmp/stop_getting_data.txt'
 
     symbols = ['BTC/USDT', 'BNB/USDT', 'ETH/USDT', 'LTC/USDT']
-    symbols = ['BTC/USDT', 'LTC/USDT']
+    symbols = ['BTC/USDT']
 
     intervals = Ehdtd.get_supported_intervals(exchange)
-    intervals = ['1m', '5m']
+    # intervals = ['1m', '5m', '15m']
+    intervals = ['1m']
 
     db_data = {}
     #db_data['db_type'] = 'mysql' # postgresql, mysql

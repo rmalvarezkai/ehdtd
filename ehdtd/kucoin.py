@@ -426,6 +426,8 @@ class KucoinEhdtdAuxClass():
 
         req_interval = KucoinEhdtdAuxClass.get_interval_from_unified_interval(interval)
 
+        limit = min(limit, 1000)
+
         url = f'{url_base}{default_endpoint}'
         url += f'?symbol={symbol}&type={req_interval}'
 
