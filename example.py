@@ -15,7 +15,7 @@ import threading
 import pprint # pylint: disable=unused-import
 
 from ehdtd import Ehdtd
-from ehdtd.binance import BinanceEhdtdAuxClass # pylint: disable=unused-import
+
 # import ehdtd.ehdtd_common_functions as ecf
 
 def main(argv): # pylint: disable=unused-argument
@@ -26,32 +26,41 @@ def main(argv): # pylint: disable=unused-argument
 
     result = 1
 
-    exchange = 'binance'
-    exchange = 'bybit'
-    exchange = 'okx'
-    exchange = 'kucoin'
-    exchange = 'bingx'
+    # exchange = 'binance'
+    # exchange = 'bybit'
+    # exchange = 'okx'
+    # exchange = 'kucoin'
+    # exchange = 'bingx'
+    exchange = 'binanceus'
 
     debug = False
     get_data = True
     check_data = False
     try_fix_data = False
-    # get_data = True
+    get_data = True
     # check_data = True
-    # try_fix_data = True
+    # try_fix_data = False
 
     conn = Ehdtd.get_exchange_connectivity(exchange)
 
-    pprint.pprint(conn, sort_dicts=False)
+    if conn is not None and isinstance(conn, dict) and 'result' in conn:
+        if not conn['result']:
+            return result
+    else:
+        return result
+
+    # pprint.pprint(conn, sort_dicts=False)
 
     stop_flag_file = '/tmp/stop_getting_data.txt'
 
     symbols = ['BTC/USDT', 'BNB/USDT', 'ETH/USDT', 'LTC/USDT']
-    symbols = ['BTC/USDT']
+    # symbols = ['BTC/USDT']
+    # symbols = ['YFI/USDC']
+    # symbols = ['NOT/USDT']
 
     intervals = Ehdtd.get_supported_intervals(exchange)
-    # intervals = ['1m', '5m', '15m']
-    intervals = ['1m']
+    intervals = ['1m', '5m', '15m']
+    # intervals = ['1m']
 
     db_data = {}
     #db_data['db_type'] = 'mysql' # postgresql, mysql
@@ -67,7 +76,7 @@ def main(argv): # pylint: disable=unused-argument
 
     time_wait = 14
     time_limit = 450
-    time_limit = 14400
+    time_limit = 28800
 
     fetch_data = []
 
@@ -95,6 +104,31 @@ def main(argv): # pylint: disable=unused-argument
         while num_act_threads > limit_act_threads and time_diff < time_limit:
             time.sleep(time_wait)
             num_act_threads = ehd.get_num_threads_active()
+
+            current_time = int(round(time.time()))
+
+            for __data_fetch in fetch_data:
+                start_from = (
+                    abs(current_time\
+                        - (5 * Ehdtd.get_delta_seconds_for_interval(__data_fetch['interval'])))
+                )
+                # start_from = 0
+                until_to = current_time
+                return_type = 'pandas'
+                # return_type = 'list'
+                # return_type = 'list_consistent_streams'
+                # return_type = 'list_consistent_streams_pandas'
+
+                data_db = ehd.get_data_from_db(__data_fetch['symbol'],\
+                                               __data_fetch['interval'],\
+                                               start_from,\
+                                               until_to,\
+                                               return_type)
+
+                pprint.pprint(data_db, sort_dicts=False)
+                print('+' * 72)
+            print('=' * 80)
+
 
             if os.path.exists(stop_flag_file):
                 os.remove(stop_flag_file)
@@ -185,26 +219,6 @@ def main(argv): # pylint: disable=unused-argument
             wait_th = False
         wait_counter += 1
         time.sleep(9)
-
-    current_time = int(round(time.time()))
-    symbol = 'BTC/USDT'
-    interval = '1m'
-    start_from = current_time - 7200
-    start_from = 0
-    until_to = current_time
-    return_type = 'pandas'
-    return_type = 'list'
-    return_type = 'list_consistent_streams'
-    return_type = 'list_consistent_streams_pandas'
-
-    data_db = ehd.get_data_from_db(symbol, interval, start_from, until_to, return_type)
-    # pprint.pprint(data_db)
-    # print(data_db)
-
-    for i, data in enumerate(data_db):
-        print(f'{i} -> {type(data)} -> {len(data)}')
-
-    print(data_db)
 
     return result
 

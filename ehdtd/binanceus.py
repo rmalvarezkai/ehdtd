@@ -1,6 +1,6 @@
 """
 Ehdtd - cryptoCurrency Exchange history data to database
-Bingx auxiliary functions
+Binanceus auxiliary functions
 
 Author: Ricardo Marcelo Alvarez
 Date: 2023-10-31
@@ -10,34 +10,33 @@ import json
 import time
 import datetime
 import urllib.request
-import pprint # pylint: disable=unused-import
 import calendar
 
 import ehdtd.ehdtd_common_functions as ecf
 
-class BingxEhdtdAuxClass():
+class BinanceusEhdtdAuxClass():
     """
-    Ehdtd - cryptoCurrency Exchange history data to database BingxEhdtdAuxClass
-    =============================================================================
+    Ehdtd - cryptoCurrency Exchange history data to database BinanceusEhdtdAuxClass
+    ===============================================================================
         This class contains helper functions for the Ehdtd class.
 
     """
 
     def __init__(self):
         """
-        BingxEhdtdAuxClass constructor
-        ================================
-            Initializes the BingxEhdtdAuxClass with the provided parameters.
+        BinanceusEhdtdAuxClass constructor
+        ==================================
+            Initializes the BinanceusEhdtdAuxClass with the provided parameters.
 
-                :param self: BingxEhdtdAuxClass instance.
-                :return: Return a new instance of the Class BingxEhdtdAuxClass.
+                :param self: BinanceusEhdtdAuxClass instance.
+                :return: Return a new instance of the Class BinanceusEhdtdAuxClass.
         """
 
         self.__exchange_info_cache = {}
         self.__exchange_info_cache['data'] = None
         self.__exchange_info_cache['last_get_time'] = 0
 
-    def get_exchange_info(self, trading_type='SPOT'): # pylint: disable=unused-argument
+    def get_exchange_info(self):
         """
         get_exchange_info
         =================
@@ -55,28 +54,16 @@ class BingxEhdtdAuxClass():
 
         if self.__exchange_info_cache['data'] is None:
 
-            __l_url_api = BingxEhdtdAuxClass.get_api_url()
-            __l_endpoint = '/openApi/spot/v1/common/symbols'
-            __l_url_point = f'{__l_url_api}{__l_endpoint}?'
-            __timestamp = int(round(time.time() * 1000))
-            __l_url_point += f'timestamp={__timestamp}'
-
-            post_data = None
-            headers = None
-
-            __data = ecf.file_get_contents_url(__l_url_point, 'r', post_data, headers)
+            __l_url_api = BinanceusEhdtdAuxClass.get_api_url()
+            __l_endpoint = '/exchangeInfo'
+            __l_url_point = __l_url_api + __l_endpoint
+            __data = ecf.file_get_contents_url(__l_url_point)
 
             if __data is not None and ecf.is_json(__data):
-                __result_tmp = json.loads(__data)
-                if __result_tmp is not None\
-                    and isinstance(__result_tmp, dict)\
-                    and 'code' in __result_tmp\
-                    and __result_tmp['code'] is not None\
-                    and isinstance(__result_tmp['code'], (int, str))\
-                    and 'data' in __result_tmp:
-                    self.__exchange_info_cache['data'] = __result_tmp
-                    self.__exchange_info_cache['last_get_time'] = current_time
-                    result = __result_tmp
+                result = json.loads(__data)
+                self.__exchange_info_cache['data'] = result
+                self.__exchange_info_cache['last_get_time'] = current_time
+
         else:
             result = self.__exchange_info_cache['data']
 
@@ -94,26 +81,20 @@ class BingxEhdtdAuxClass():
         result = None
         __main_data = self.get_exchange_info()
 
-        if __main_data is not None and isinstance(__main_data, dict)\
-            and __main_data['data'] is not None\
-            and isinstance(__main_data['data'], dict)\
-            and 'symbols' in __main_data['data']\
-            and __main_data['data']['symbols'] is not None\
-            and isinstance(__main_data['data']['symbols'], list):
+        if __main_data is not None and isinstance(__main_data,dict)\
+            and 'symbols' in __main_data and isinstance(__main_data['symbols'],list):
+            result = []
+            for symbol_data in __main_data['symbols']:
+                if symbol_data is not None and isinstance(symbol_data,dict):
+                    if 'baseAsset' in symbol_data and 'quoteAsset' in symbol_data\
+                        and isinstance(symbol_data['baseAsset'],str)\
+                        and isinstance(symbol_data['quoteAsset'],str):
+                        result.append(\
+                            symbol_data['baseAsset'].upper() + '/'\
+                                + symbol_data['quoteAsset'].upper())
 
-            try:
-                result = []
-                for symbol_data in __main_data['data']['symbols']:
-                    if symbol_data is not None and isinstance(symbol_data, dict):
-                        if 'symbol' in symbol_data\
-                            and isinstance(symbol_data['symbol'],str):
-                            result.append(symbol_data['symbol'].replace('-', '/'))
-
-                if sort_list:
-                    result.sort()
-
-            except Exception: # pylint: disable=broad-except
-                result = None
+            if sort_list:
+                result.sort()
 
         return result
 
@@ -149,19 +130,8 @@ class BingxEhdtdAuxClass():
         """
         get_historical_data_from_url_file
         =================================
-
-            :param self: BingxEhdtdAuxClass instance.
-            :param symbol: str unified symbol.
-            :param interval: str.
-            :param year: int. >=2018
-            :param month: int. >=1 or <=12
-            :param day: int. >=1 or <=31
-            :param force_daily: bool force getting monthly and daily files.
-            :param trading_type: str only allowed 'SPOT'.
-            :return list[dict]: Return list of dict with data
         """
         result = None
-
         return result
 
     def get_last_klines_candlestick_data(self, symbol, interval, start_time=None, limit=1000):
@@ -169,7 +139,7 @@ class BingxEhdtdAuxClass():
         Ehdtd get_last_klines_candlestick_data function.
         ================================================
             This method return a list of last klines data.
-                :param self: BingxEhdtdAuxClass instance.
+                :param self: BinanceusEhdtdAuxClass instance.
                 :param symbol: str
                 :param interval: str
                 :param start_time: int unix timestamp if is None start_time is time.time() - 900
@@ -180,10 +150,10 @@ class BingxEhdtdAuxClass():
         """
         result = None
 
-        result = BingxEhdtdAuxClass.get_kline_data(symbol,\
-                                                   interval,\
-                                                   start_time=start_time,\
-                                                   limit=limit)
+        result = BinanceusEhdtdAuxClass.get_kline_data(symbol,\
+                                                     interval,\
+                                                     start_time=start_time,\
+                                                     limit=limit)
 
         return result
 
@@ -193,7 +163,7 @@ class BingxEhdtdAuxClass():
         get_api_url
         ===========
             This function set and return API URL.
-                :param cls: BingxEhdtdAuxClass Class.
+                :param cls: BinanceusEhdtdAuxClass Class.
                 :param trading_type: str only allowed 'SPOT'
                 :return str: Return API URL.
         """
@@ -201,7 +171,7 @@ class BingxEhdtdAuxClass():
 
         __url_api = None
         if trading_type == 'SPOT':
-            __url_api = 'https://open-api.bingx.com'
+            __url_api = 'https://api.binance.us/api/v3'
 
         result = __url_api
 
@@ -213,7 +183,7 @@ class BingxEhdtdAuxClass():
         get_exchange_connectivity
         =========================
             This function return a dict with connectivity information.
-                :param cls: BingxEhdtdAuxClass Class.
+                :param cls: BinanceusEhdtdAuxClass Class.
                 :return dict: result.
                     result = {
                         'result': bool, # True if connectivity is working False in other case.
@@ -226,7 +196,7 @@ class BingxEhdtdAuxClass():
         timeout = 45
 
         __url_api = cls.get_api_url()
-        __endpoint = '/openApi/spot/v1/server/time'
+        __endpoint = '/ping'
         __url = f'{__url_api}{__endpoint}'
 
         req = urllib.request.Request(__url, None, headers)
@@ -288,14 +258,10 @@ class BingxEhdtdAuxClass():
                 if result['code'] is not None\
                     and isinstance(result['code'], int)\
                     and 200 <= result['code'] < 300\
-                    and result['res_code'] is not None\
-                    and result['res_code'] == 0:
+                    and result['res_code'] is None:
                     result['result'] = True
                     result['headers'] = None
-                    result['res_code'] = None
-                    result['res_msg'] = None
                     result['data'] = {}
-
                 else:
                     result['result'] = False
 
@@ -307,19 +273,19 @@ class BingxEhdtdAuxClass():
         get_unified_symbol_from_symbol
         ==============================
             This function get unified symbol from symbol.
-                :param cls: BingxEhdtdAuxClass Class.
+                :param cls: BinanceusEhdtdAuxClass Class.
                 :param symbol: str.
                 :return str: Return unified symbol.
         """
         result = symbol
-        beac = BingxEhdtdAuxClass()
+        beac = BinanceusEhdtdAuxClass()
 
         full_list_symbols = beac.get_exchange_full_list_symbols(False)
 
         if full_list_symbols is not None and isinstance(full_list_symbols, list):
             for symbol_rpl in full_list_symbols:
                 if symbol_rpl is not None\
-                    and symbol.replace('/', '-').lower() == symbol_rpl.replace('/', '-').lower():
+                    and symbol.replace('/', '').lower() == symbol_rpl.replace('/', '').lower():
                     result = symbol_rpl
                     break
 
@@ -331,19 +297,19 @@ class BingxEhdtdAuxClass():
         get_symbol_from_unified_symbol
         ==============================
             This function get unified interval from interval.
-                :param cls: BingxEhdtdAuxClass Class.
+                :param cls: BinanceusEhdtdAuxClass Class.
                 :param symbol: str unified symbol.
                 :return str: Return symbol.
         """
         result = symbol
 
-        beac = BingxEhdtdAuxClass()
+        beac = BinanceusEhdtdAuxClass()
 
         if symbol is not None\
             and isinstance(symbol, str)\
             and len(symbol) > 0\
             and beac.if_symbol_supported(symbol):
-            result = symbol.replace('/', '-').upper()
+            result = symbol.replace('/', '').upper()
             result = str(result)
 
         return result
@@ -387,21 +353,20 @@ class BingxEhdtdAuxClass():
 
         return result
 
-
     @classmethod
     def get_kline_data(cls,\
                        symbol,\
                        interval,\
                        start_time: float=None,\
                        end_time: float=None,\
-                       limit: int=500,\
+                       limit: int=1000,\
                        default_endpoint: str='uiKlines',\
                        trading_type: str='SPOT'):
         """
         get_kline_data
         ==============
             This function get the kline/candlestick API URL.
-                :param cls: BingxEhdtdAuxClass Class.
+                :param cls: BinanceusEhdtdAuxClass Class.
                 :param symbol: str
                 :param interval: str
                 :param start_time: float
@@ -414,120 +379,73 @@ class BingxEhdtdAuxClass():
 
         result = None
         unified_symbol = symbol
-        symbol = BingxEhdtdAuxClass.get_symbol_from_unified_symbol(symbol)
+        symbol = BinanceusEhdtdAuxClass.get_symbol_from_unified_symbol(symbol)
+        limit = min(limit, 1000)
 
-        url_base = BingxEhdtdAuxClass.get_api_url(trading_type=trading_type)
-        default_endpoint = '/openApi/market/his/v1/kline'
-        # default_endpoint = '/openApi/spot/v2/market/kline'
+        if default_endpoint not in ['klines', 'uiKlines']:
+            default_endpoint = 'uiKlines'
 
-        req_interval = BingxEhdtdAuxClass.get_interval_from_unified_interval(interval)
-
-        limit = min(limit, 500)
-
-        url = f'{url_base}{default_endpoint}'
-        url += f'?symbol={symbol}&interval={req_interval}'
-        url += f'&limit={int(limit)}'
+        url_base = BinanceusEhdtdAuxClass.get_api_url(trading_type=trading_type)
+        url = f'{url_base}/{default_endpoint}?symbol={symbol}&interval={interval}'
+        url += f'&limit={int(limit) + 1}'
 
         start_time_out = ''
         end_time_out = ''
 
-        if start_time is not None and isinstance(start_time, (int,float)) and start_time >= 0:
-            start_time = int(round(start_time * 1000))
+        if start_time is not None and (isinstance(start_time, (int,float)) or start_time == 0):
+            start_time = round(start_time * 1000)
             start_time_out = f'&startTime={start_time}'
 
-        if end_time is not None\
-            and isinstance(end_time, (int, float, str))\
-            and int(end_time) >= 0\
-            and int(end_time * 1000) > int(start_time):
-            end_time = int(round(end_time * 1000))
+        if end_time is not None and (isinstance(end_time, (int,float)) or end_time == 0):
+            end_time = round(end_time * 1000)
             end_time_out = f'&endTime={end_time}'
 
-        url += f'{start_time_out}{end_time_out}'
+        url = url + start_time_out + end_time_out
 
-        __attemp = -1
+        __attemp = 0
         __max_attemp = 9
-        req_data = None
-        post_data = None
-        headers = None
+        req_data = ecf.file_get_contents_url_cmpl(url, mode='r')
 
         while __attemp < __max_attemp and not (req_data is not None and isinstance(req_data, dict)):
-            req_data = ecf.file_get_contents_url(url, 'r', post_data, headers)
-            if ecf.is_json(req_data):
-                req_data = json.loads(req_data)
-
-            __attemp += 1
+            req_data = ecf.file_get_contents_url_cmpl(url, mode='r')
             time.sleep(0.1)
+            __attemp += 1
 
         if req_data is not None and isinstance(req_data, dict):
 
-            try:
-                __data = req_data['data']
+            if not req_data['exception_status']\
+                and req_data['code'] == 200\
+                and ecf.is_json(req_data['data']):
 
-                if __data is not None and isinstance(__data, list):
+                data = json.loads(req_data['data'])
+
+                if data is not None and isinstance(data, list):
                     result = []
 
-                    for kline in __data:
-                        if kline is not None and isinstance(kline, list) and len(kline) >= 8:
+                    for kline in data:
+                        if kline is not None and isinstance(kline, list) and len(kline) >= 12:
                             data_line = None
                             data_line = {}
                             data_line['open_time'] = int(round(int(kline[0])/1000))
                             data_line['open_date'] = time.strftime("%Y-%m-%d %H:%M:%S",\
                                                                    time.gmtime(\
                                                                        data_line['open_time']))
-
-
-                            data_line['open_price'] = str(kline[1])
+                            data_line['open_price'] = kline[1]
                             data_line['close_time'] = int(round(int(kline[6])/1000))
                             data_line['close_date'] = time.strftime("%Y-%m-%d %H:%M:%S",\
                                                                     time.gmtime(\
                                                                         data_line['close_time']))
-                            data_line['close_price'] = str(kline[4])
-                            data_line['low'] = str(kline[3])
-                            data_line['high'] = str(kline[2])
-                            data_line['volume'] = str(kline[5])
-                            data_line['exchange'] = 'bingx'
+                            data_line['close_price'] = kline[4]
+                            data_line['low'] = kline[3]
+                            data_line['high'] = kline[2]
+                            data_line['volume'] = kline[5]
+                            data_line['exchange'] = 'binanceus'
                             data_line['symbol'] = unified_symbol
                             data_line['interval'] = interval
                             result.append(data_line)
 
-                    if len(result) > 1:
-                        result.reverse()
+                    if len(result) > 0:
                         result = result[:-1]
-
-            except Exception: # pylint: disable=broad-except
-                result = None
-
-        return result
-
-    @classmethod
-    def get_interval_from_unified_interval(cls, interval):
-        """
-        get_interval_from_unified_interval
-        ==================================
-
-        """
-        result = None
-
-        __intervals_map = {
-            '1m': '1m',
-            '3m': '3m',
-            '5m': '5m',
-            '15m': '15m',
-            '30m': '30m',
-            '1h': '1h',
-            '2h': '2h',
-            '4h': '4h',
-            '6h': '6h',
-            '8h': '8h',
-            '12h': '12h',
-            '1d': '1d',
-            '3d': '3d',
-            '1w': '1w',
-            '1mo': '1M'
-        }
-
-        if interval in __intervals_map:
-            result = str(__intervals_map[interval])
 
         return result
 
@@ -538,17 +456,9 @@ class BingxEhdtdAuxClass():
         =============================
         """
         result = 0
-        delta_time = 3600 * 24 * 40
+        delta_time = 3600 * 24 * 32
 
-        __current_year = int(time.strftime("%Y", time.gmtime(time_ini)))
-        __current_month = int(time.strftime("%m", time.gmtime(time_ini)))
-
-        __current_time = (
-            int(round(datetime.datetime(__current_year,__current_month, 1, 0, 0, 0, 0)\
-                      .timestamp()))
-        )
-
-        next_time = __current_time + delta_time
+        next_time = time_ini + delta_time
         __next_year = int(time.strftime("%Y", time.gmtime(next_time)))
         __next_month = int(time.strftime("%m", time.gmtime(next_time)))
 
@@ -557,91 +467,43 @@ class BingxEhdtdAuxClass():
         return result
 
     @classmethod
-    def get_symbol_first_year_month_listed(cls, symbol, interval, trading_type: str='SPOT'): # pylint: disable=unused-argument
+    def get_symbol_first_year_month_listed(cls, symbol, interval, trading_type: str='SPOT'):
         """
         get_symbol_first_year_month_listed
         ==================================
             This function set and return API URL.
-                :param cls: BingxEhdtdAuxClass Class.
+                :param cls: BinanceusEhdtdAuxClass Class.
                 :param symbol: str
                 :param interval: str
                 :param trading_type: str only allowed 'SPOT'
                 :return tuple: Return a tuple first element is first year listed\
                                and second element is first month listed
         """
-        result = None
+        __min_history_year = 2018
+        __min_history_month = 1
 
-        __min_history_year = 2023
-        __min_history_month = 12
+        result = (__min_history_year, __min_history_month)
 
-        unified_symbol = symbol
-        symbol = BingxEhdtdAuxClass.get_symbol_from_unified_symbol(unified_symbol)
-        limit = 2
+        data = BinanceusEhdtdAuxClass.get_kline_data(symbol,\
+                                                   interval,\
+                                                   start_time=0,\
+                                                   limit=4,\
+                                                   trading_type=trading_type)
 
-        url_base = BingxEhdtdAuxClass.get_api_url(trading_type=trading_type)
-        default_endpoint = '/openApi/market/his/v1/kline'
+        if data is not None\
+            and isinstance(data, list)\
+            and len(data) > 0\
+            and data[0] is not None\
+            and isinstance(data[0], dict):
 
-        interval = BingxEhdtdAuxClass.get_interval_from_unified_interval(interval)
+            if 'open_time' in data[0]\
+                and data[0]['open_time'] is not None\
+                and isinstance(data[0]['open_time'], (int, float)):
 
-        url = f'{url_base}{default_endpoint}?'
-        url += f'symbol={symbol}&interval={interval}&limit={limit}'
-        url += '&endTime='
+                open_time = int(data[0]['open_time'])
 
-        current_time = int(round(time.time()))
-
-        start_time = 0
-        first_time = None
-        start_time = int(round(datetime.datetime(__min_history_year,\
-                                                 __min_history_month,\
-                                                 1,0,0,0,0).timestamp()))
-
-        req_data = None
-
-        while first_time is None and start_time < current_time:
-
-            url_req = f'{url}{start_time}000'
-
-            __attemp = -1
-            __max_attemp = 9
-            req_data = None
-            post_data = None
-            headers = None
-
-            while __attemp < __max_attemp\
-                and not (req_data is not None and isinstance(req_data, dict)):
-                req_data = ecf.file_get_contents_url(url_req, 'r', post_data, headers)
-                if req_data is None:
-                    time.sleep(0.1)
-                else:
-                    if ecf.is_json(req_data):
-                        req_data = json.loads(req_data)
-                __attemp += 1
-
-            if req_data is not None and isinstance(req_data, dict):
-                if 'code' in req_data\
-                    and int(req_data['code']) == 0\
-                    and 'data' in req_data\
-                    and isinstance(req_data['data'], list)\
-                    and len(req_data['data']) > 0:
-
-                    try:
-                        first_time = int(round(int(req_data['data'][-1][0]) / 1000))
-
-                    except Exception: # pylint: disable=broad-except
-                        first_time = None
-                else:
-                    start_time = cls.get_next_month_time_from_time(start_time)
-
-            time.sleep(0.1)
-
-        if first_time is None:
-            result = (int(time.strftime("%Y", time.gmtime(current_time))),\
-                        int(time.strftime("%m", time.gmtime(current_time))))
-
-        else:
-            first_time = cls.get_next_month_time_from_time(int(first_time))
-            result = (int(time.strftime("%Y", time.gmtime(first_time))),\
-                        int(time.strftime("%m", time.gmtime(first_time))))
+                result = (int(time.strftime("%Y", time.gmtime(open_time))),\
+                          int(time.strftime("%m", time.gmtime(open_time))))
 
         return result
 
@@ -651,7 +513,7 @@ class BingxEhdtdAuxClass():
         Ehdtd get_supported_intervals function.
         =======================================
             This method return a list of not daily data for this intervals.
-                :param cls: BingxEhdtdAuxClass Class.
+                :param cls: BinanceusEhdtdAuxClass Class.
 
                 :return: list of not daily data intervals
         """
@@ -665,11 +527,10 @@ class BingxEhdtdAuxClass():
         Ehdtd get_supported_intervals function.
         =======================================
             This method return a list of supported intervals.
-                :param cls: BingxEhdtdAuxClass Class.
+                :param cls: BinanceusEhdtdAuxClass Class.
 
                 :return: list of supported intervals.
         """
-
         __result = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h',\
                     '6h', '8h', '12h', '1d', '3d', '1w', '1mo']
 

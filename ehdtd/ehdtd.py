@@ -30,6 +30,7 @@ from ehdtd.bybit import BybitEhdtdAuxClass
 from ehdtd.okx import OkxEhdtdAuxClass
 from ehdtd.kucoin import KucoinEhdtdAuxClass
 from ehdtd.bingx import BingxEhdtdAuxClass
+from ehdtd.binanceus import BinanceusEhdtdAuxClass
 
 class EhdtdExchangeConfig:
     """
@@ -48,7 +49,8 @@ class EhdtdExchangeConfig:
         'bybit': BybitEhdtdAuxClass,
         'okx': OkxEhdtdAuxClass,
         'kucoin': KucoinEhdtdAuxClass,
-        'bingx': BingxEhdtdAuxClass
+        'bingx': BingxEhdtdAuxClass,
+        'binanceus': BinanceusEhdtdAuxClass
     }
 
 class Ehdtd(): # pylint: disable=too-many-instance-attributes
@@ -777,16 +779,18 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
             try:
                 for data in data_list:
-                    data_out = data
-                    data_out['status'] = '__NON_CHECK__'
+                    data_out_insert = data
+                    data_out_update = data
+                    data_out_insert['status'] = '__NON_CHECK__'
+                    data_out_update.pop('status', None)
 
                     if self.__db_type == 'postgresql':
-                        stmt = sqlalchemy.dialects.postgresql.insert(table).values(data_out)
+                        stmt = sqlalchemy.dialects.postgresql.insert(table).values(data_out_insert)
                         stmt = stmt.on_conflict_do_update(\
-                            index_elements=__primary_key_cols, set_=data_out)
+                            index_elements=__primary_key_cols, set_=data_out_update)
                     elif self.__db_type == 'mysql':
-                        stmt = sqlalchemy.dialects.mysql.insert(table).values(data_out)
-                        stmt = stmt.on_duplicate_key_update(**data_out)
+                        stmt = sqlalchemy.dialects.mysql.insert(table).values(data_out_insert)
+                        stmt = stmt.on_duplicate_key_update(**data_out_update)
 
                     # pprint.pprint(data_out, sort_dicts=False)
                     # print('=' * 80)
@@ -1162,6 +1166,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     self.__chk_db_all_symbols_thd[__table_name].start()
                     result = True
 
+        self.check_and_fix_database_data(7200)
+
         return result
 
     def __check_database_all_symbols(self, start_from=0):
@@ -1171,6 +1177,59 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             self.check_database_data(fetch_data_node['symbol'],\
                                      fetch_data_node['interval'],\
                                      start_from)
+
+        return result
+
+    def check_and_fix_database_data(self, last_n_values=None):
+        """
+        check_and_fix_database_data
+        ===========================
+        """
+        result = False
+        __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
+
+        if not isinstance(self.__fetch_data, list):
+            return result
+
+        __symbol = None
+        __interval = None
+
+        try:
+            log_msg = f'Starting {__l_function}, exchange: {self.__exchange}'
+            self.__log_logger.info(log_msg)
+
+            for __data in self.__fetch_data:
+                __symbol = __data['symbol']
+                __interval = __data['interval']
+                __start_time = 0
+                if last_n_values is not None:
+                    __start_time = abs(int(time.time())\
+                                    - (last_n_values\
+                                        * Ehdtd.get_delta_seconds_for_interval(__interval)))
+
+                log_msg = f'{__l_function} starting checking and fixing,'
+                log_msg += f' exchange: {self.__exchange}'
+                log_msg += f', symbol: {__symbol}, interval: {__interval}'
+                log_msg += f', start_time: {__start_time}'
+                self.__log_logger.info(log_msg)
+
+                __db_errors = self.check_database_data(__symbol, __interval, __start_time)
+                result = self.try_to_fix_database_data(__db_errors['result']) and result
+
+                log_msg = f'{__l_function} ending checking and fixing, exchange: {self.__exchange}'
+                log_msg += f', symbol: {__symbol}, interval: {__interval}'
+                self.__log_logger.info(log_msg)
+
+            log_msg = f'Ending {__l_function}, exchange: {self.__exchange}'
+            self.__log_logger.info(log_msg)
+
+        except Exception as exc: # pylint: disable=broad-except
+            err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
+            err_msg += f', symbol: {__symbol}, interval: {__interval}, error: {exc}'
+            self.__err_logger.error(err_msg)
+            time.sleep(5)
+            result = False
+
 
         return result
 
@@ -1461,7 +1520,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         db_conn = self.__db_engine.connect()
 
         if data is not None and isinstance(data, list) and len(data) > 0:
-            __limit = 3
+            __limit = 1000
             __first_node = data[0]
             symbol = __first_node['symbol']
             interval = __first_node['interval']
@@ -1712,7 +1771,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 __data_thread.join(time_to_wait)
 
         if self.__main_thread.is_alive():
-            print(f'main_thread_name: {self.__main_thread.getName()}')
+            # print(f'main_thread_name: {self.__main_thread.getName()}')
             self.__main_thread.join(time_to_wait)
 
         self.__is_threads_running = False
@@ -1844,15 +1903,23 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                                 .do(self.__get_and_proc_data_from_websocket, symbol, interval)
 
             time.sleep(__interval_sleep)
+
             start_from = 0
             self.__check_database_all_symbols_thd(symbol=symbol,\
                                                   interval=interval,\
                                                   start_from=start_from)
 
+            __last_time = time.time()
+            __time_to_check = 300
+
             while not __stop_run:
 
                 message = None
                 try:
+                    if abs(time.time() - __last_time) > __time_to_check:
+                        self.check_and_fix_database_data(7200)
+                        __last_time = time.time()
+
                     if __l_queue.qsize() > 0:
                         message = __l_queue.get(False, 9)
 
@@ -1893,6 +1960,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
     def __get_and_proc_data_from_websocket(self, symbol, interval):
         result = True
 
+        __exchanges_drop_1 = ['bingx', 'kucoin']
+
         __current_minute = int(time.strftime("%M", time.gmtime(int(round(time.time())))))
 
         __task_every = 1
@@ -1917,12 +1986,17 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         str_out = f'{__l_function}: GET THIS DATA (From kline websocket api endpoint): '
         str_out += f'exchange: {self.__exchange}, symbol: {symbol}, interval: {interval}'
 
-        if __current_data is not None:
+        if __current_data is not None\
+            and isinstance(__current_data, list)\
+            and len(__current_data) > 0:
+
+            if self.__exchange in __exchanges_drop_1:
+                __current_data = __current_data[0:-1]
 
             if self.__exec_db_upsert_stmt(symbol,\
-                                            interval,\
-                                            __current_data,\
-                                            __local_db_conn):
+                                          interval,\
+                                          __current_data,\
+                                          __local_db_conn):
                 str_out += ' -> YES'
             else:
                 str_out += ' -> NO'
@@ -2470,7 +2544,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                 :return: list of supported exchanges.
         """
-        __suported_exchanges = ['binance', 'bybit', 'okx', 'kucoin', 'bingx']
+        __suported_exchanges = ['binance', 'bybit', 'okx', 'kucoin', 'bingx', 'binanceus']
 
         return __suported_exchanges
 

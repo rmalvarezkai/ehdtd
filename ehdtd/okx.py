@@ -11,7 +11,6 @@ import time
 import datetime
 import urllib.request
 import pprint # pylint: disable=unused-import
-import random
 import calendar
 
 import ehdtd.ehdtd_common_functions as ecf
@@ -461,8 +460,6 @@ class OkxEhdtdAuxClass():
 
         url += f'{start_time_out}{end_time_out}'
 
-        time.sleep(round(random.uniform(0.1, 0.25), 1))
-
         __attemp = -1
         __max_attemp = 9
         req_data = None
@@ -475,9 +472,8 @@ class OkxEhdtdAuxClass():
             req_data = ecf.file_get_contents_url(url, 'r', post_data, headers)
             if ecf.is_json(req_data):
                 req_data = json.loads(req_data)
-
+            time.sleep(0.1)
             __attemp += 1
-            time.sleep(round(random.uniform(4, 5), 1))
 
         if req_data is not None and isinstance(req_data, dict):
 
@@ -649,7 +645,7 @@ class OkxEhdtdAuxClass():
                 and not (req_data is not None and isinstance(req_data, dict)):
                 req_data = ecf.file_get_contents_url(url_req, 'r', post_data, headers)
                 if req_data is None:
-                    time.sleep(round(random.uniform(4, 5), 1))
+                    time.sleep(0.1)
                 else:
                     if ecf.is_json(req_data):
                         req_data = json.loads(req_data)

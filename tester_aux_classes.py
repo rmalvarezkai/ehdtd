@@ -19,6 +19,7 @@ from ehdtd.bybit import BybitEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.okx import OkxEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.kucoin import KucoinEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.bingx import BingxEhdtdAuxClass # pylint: disable=unused-import
+from ehdtd.binanceus import BinanceusEhdtdAuxClass # pylint: disable=unused-import
 
 import ehdtd.ehdtd_common_functions as ecf
 
@@ -205,6 +206,10 @@ def main(argv): # pylint: disable=unused-argument
             {
                 'class_name': 'BingxEhdtdAuxClass',
                 'class': BingxEhdtdAuxClass
+            },
+            {
+                'class_name': 'BinanceusEhdtdAuxClass',
+                'class': BinanceusEhdtdAuxClass
             }
         ]
 

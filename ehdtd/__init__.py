@@ -14,6 +14,7 @@ from ehdtd.bybit import BybitEhdtdAuxClass
 from ehdtd.okx import OkxEhdtdAuxClass
 from ehdtd.kucoin import KucoinEhdtdAuxClass
 from ehdtd.bingx import BingxEhdtdAuxClass
+from ehdtd.binanceus import BinanceusEhdtdAuxClass
 from ehdtd.ehdtd import Ehdtd, EhdtdRO, EhdtdExchangeConfig
 
 ehdtd_metadata = importlib.metadata.metadata('ehdtd')

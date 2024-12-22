@@ -43,7 +43,9 @@ def main(argv): # pylint: disable=unused-argument
     end_time = int(time.time())
     # end_time = end_time - ((86400 * 365 * 3) + 0)
     end_time = min(end_time, int(time.time()))
-    start_time = end_time - (KucoinEhdtdAuxClass.get_delta_time_from_interval(interval) * (limit+1)) # pylint: disable=unused-variable
+    start_time = (
+        end_time - (BinanceusEhdtdAuxClass.get_delta_time_from_interval(interval) * (limit+1))
+    )
 
     start_time_out = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(start_time))
     end_time_out = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(end_time))
@@ -53,7 +55,7 @@ def main(argv): # pylint: disable=unused-argument
     trading_type = 'SPOT' # pylint: disable=unused-variable
 
     __aux_skel_class = BinanceEhdtdAuxClass
-    __aux_test_class = KucoinEhdtdAuxClass
+    __aux_test_class = BinanceusEhdtdAuxClass
     __aux_skel_inst = __aux_skel_class()
     __aux_test_inst = __aux_test_class()
 
@@ -65,6 +67,10 @@ def main(argv): # pylint: disable=unused-argument
 
     __test_data = __aux_test_inst.get_last_klines_candlestick_data(symbol, interval,\
                                                                   start_time, limit)
+
+    pprint.pprint(__test_data, sort_dicts=False)
+    print('=' * 80)
+    print('')
 
     __test_data = (
         __aux_test_class.get_symbol_first_year_month_listed(symbol, interval, trading_type)

@@ -26,6 +26,7 @@ pylint = "^3.0.2"
 pytest = "^7.4.3"
 pytest-xdist = "^3.5.0"
 ipykernel = "^6.29.4"
+sympy = "^1.13.3"
 
 [build-system]
 requires = ["poetry-core"]

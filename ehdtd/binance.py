@@ -12,7 +12,6 @@ import datetime
 import io
 import urllib.request
 import csv
-import random
 import hashlib
 import calendar
 
@@ -561,16 +560,14 @@ class BinanceEhdtdAuxClass():
 
         url = url + start_time_out + end_time_out
 
-        time.sleep(round(random.uniform(0.1, 0.25), 1))
-
         __attemp = 0
         __max_attemp = 9
         req_data = ecf.file_get_contents_url_cmpl(url, mode='r')
 
         while __attemp < __max_attemp and not (req_data is not None and isinstance(req_data, dict)):
             req_data = ecf.file_get_contents_url_cmpl(url, mode='r')
+            time.sleep(0.1)
             __attemp += 1
-            time.sleep(round(random.uniform(4, 5), 1))
 
         if req_data is not None and isinstance(req_data, dict):
 
