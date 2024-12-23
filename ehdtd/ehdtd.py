@@ -1166,8 +1166,6 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     self.__chk_db_all_symbols_thd[__table_name].start()
                     result = True
 
-        self.check_and_fix_database_data(7200)
-
         return result
 
     def __check_database_all_symbols(self, start_from=0):
@@ -1626,6 +1624,11 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 .hours.at("14:23")\
                     .do(self.__check_database_all_symbols_thd, start_from=start_from)
 
+        __last_check_time = int(time.time())
+        __last_full_check_time = 0
+        __time_to_check = 300
+        __hour_to_full_check = 21
+
         while not __stop_run_main_thd:
             with self.__lock_schedule:
                 schedule.run_pending()
@@ -1649,6 +1652,23 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 if message is not None and isinstance(message, str):
                     if message == '__STOP__':
                         __stop_run_main_thd = True
+
+            __current_time = int(time.time())
+
+            if abs(__current_time - __last_check_time) > __time_to_check:
+                __start_time = 7200
+                __current_hour = int(time.strftime("%H", time.gmtime(__current_time)))
+
+                if __current_hour == __hour_to_full_check\
+                    and abs(__current_time - __last_full_check_time) > 7200:
+                    __start_time = None
+                    self.check_and_fix_database_data(__start_time)
+                    __last_check_time = int(time.time())
+                    __last_full_check_time = __last_check_time
+                else:
+                    __start_time = 7200
+                    self.check_and_fix_database_data(__start_time)
+                    __last_check_time = int(time.time())
 
         with self.__lock_schedule:
             if __schedule_task is not None:
@@ -1909,17 +1929,10 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                                                   interval=interval,\
                                                   start_from=start_from)
 
-            __last_time = time.time()
-            __time_to_check = 300
-
             while not __stop_run:
 
                 message = None
                 try:
-                    if abs(time.time() - __last_time) > __time_to_check:
-                        self.check_and_fix_database_data(7200)
-                        __last_time = time.time()
-
                     if __l_queue.qsize() > 0:
                         message = __l_queue.get(False, 9)
 
