@@ -2379,7 +2379,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                 log_handler = logging.FileHandler(self.__log_logger_file)
                 log_handler.setFormatter(__log_formatter)
-                self.__log_logger = logging.getLogger('EHDTD_LOG')
+                self.__log_logger = logging.getLogger(f'EHDTD_{self.__exchange.upper()}_LOG')
                 self.__log_logger.setLevel(logging.INFO)
 
                 for handler in self.__log_logger.handlers[:]:
@@ -2389,7 +2389,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                 err_handler = logging.FileHandler(self.__err_logger_file)
                 err_handler.setFormatter(__err_formatter)
-                self.__err_logger = logging.getLogger('EHDTD_ERR')
+                self.__err_logger = logging.getLogger(f'EHDTD_{self.__exchange.upper()}_ERR')
                 self.__err_logger.setLevel(logging.ERROR)
 
                 for handler in self.__err_logger.handlers[:]:
