@@ -1658,6 +1658,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             if abs(__current_time - __last_check_time) > __time_to_check:
                 __start_time = 7200
                 __current_hour = int(time.strftime("%H", time.gmtime(__current_time)))
+                __current_minute = int(time.strftime("%M", time.gmtime(__current_time)))
 
                 if __current_hour == __hour_to_full_check\
                     and abs(__current_time - __last_full_check_time) > 7200:
@@ -1665,7 +1666,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     self.check_and_fix_database_data(__start_time)
                     __last_check_time = int(time.time())
                     __last_full_check_time = __last_check_time
-                else:
+                elif ((__current_minute % 5) == 0 and abs(__current_time - __last_check_time) > 90)\
+                    or abs(__current_time - __last_check_time) > __time_to_check:
                     __start_time = 7200
                     self.check_and_fix_database_data(__start_time)
                     __last_check_time = int(time.time())
