@@ -170,6 +170,13 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             :return: Return a new instance of the Class Ehdtd.
         """
 
+        self.__exchange = None
+
+        if exchange in Ehdtd.get_supported_exchanges():
+            self.__exchange = exchange
+        else:
+            raise ValueError(f'The exchange {exchange} is not supported.')
+
         self.__log_logger = None
         self.__err_logger = None
 
@@ -191,7 +198,6 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
         self.__db_type = None
         self.__db_name = None
-        self.__exchange = None
         self.__fetch_data = None
         self.__trading_type = None
 
@@ -206,11 +212,6 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             self.__trading_type = trading_type
         else:
             raise ValueError(f'The trading type {trading_type} is not supported.')
-
-        if exchange in Ehdtd.get_supported_exchanges():
-            self.__exchange = exchange
-        else:
-            raise ValueError(f'The exchange {exchange} is not supported.')
 
         self.__exchange_aux_class = EhdtdExchangeConfig.exchange_classes[self.__exchange]()
 
@@ -2419,8 +2420,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         __log_file_err = None
 
         if log_dir is not None and self.is_valid_dir(log_dir):
-            __log_file_log = os.path.join(log_dir, __log_file_base + '.log')
-            __log_file_err = os.path.join(log_dir, __log_file_base + '.err')
+            __log_file_log = os.path.join(log_dir, f'{__log_file_base}-{self.__exchange}.log')
+            __log_file_err = os.path.join(log_dir, f'{__log_file_base}-{self.__exchange}.err')
             if self.is_valid_file(__log_file_log) and self.is_valid_file(__log_file_err):
                 __result = True
 
@@ -2435,8 +2436,12 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 __log_file_path = os.path.join(__home_directory, '.var/log/ehdtd')
 
             if __log_file_path is not None and self.is_valid_dir(__log_file_path):
-                __log_file_log = os.path.join(__log_file_path, __log_file_base + '.log')
-                __log_file_err = os.path.join(__log_file_path, __log_file_base + '.err')
+                __log_file_log = os.path.join(__log_file_path,\
+                                              f'{__log_file_base}-{self.__exchange}.log')
+
+                __log_file_err = os.path.join(__log_file_path,\
+                                              f'{__log_file_base}-{self.__exchange}.err')
+
                 if self.is_valid_file(__log_file_log) and self.is_valid_file(__log_file_err):
                     __result = True
 
