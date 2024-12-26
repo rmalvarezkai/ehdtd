@@ -191,26 +191,26 @@ def main(argv): # pylint: disable=unused-argument
 
     __aux_skel_class = BinanceEhdtdAuxClass
     __aux_test_classes = [
-            {
-                'class_name': 'BybitEhdtdAuxClass',
-                'class': BybitEhdtdAuxClass
-            },
-            {
-                'class_name': 'OkxEhdtdAuxClass',
-                'class': OkxEhdtdAuxClass
-            },
-            {
-                'class_name': 'KucoinEhdtdAuxClass',
-                'class': KucoinEhdtdAuxClass
-            },
+            # {
+            #     'class_name': 'BybitEhdtdAuxClass',
+            #     'class': BybitEhdtdAuxClass
+            # },
+            # {
+            #     'class_name': 'OkxEhdtdAuxClass',
+            #     'class': OkxEhdtdAuxClass
+            # },
+            # {
+            #     'class_name': 'KucoinEhdtdAuxClass',
+            #     'class': KucoinEhdtdAuxClass
+            # },
             {
                 'class_name': 'BingxEhdtdAuxClass',
                 'class': BingxEhdtdAuxClass
             },
-            {
-                'class_name': 'BinanceusEhdtdAuxClass',
-                'class': BinanceusEhdtdAuxClass
-            }
+            # {
+            #     'class_name': 'BinanceusEhdtdAuxClass',
+            #     'class': BinanceusEhdtdAuxClass
+            # }
         ]
 
     for __aux_test_class in __aux_test_classes:

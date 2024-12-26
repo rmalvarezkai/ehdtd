@@ -35,7 +35,7 @@ def main(argv): # pylint: disable=unused-argument
 
     result = False
 
-    exchange = 'okx'
+    exchange = 'bingx'
     symbol = 'BTC/USDT' # pylint: disable=unused-variable
     interval = '1m' # pylint: disable=unused-variable
     limit = 14 # pylint: disable=unused-variable
@@ -67,6 +67,24 @@ def main(argv): # pylint: disable=unused-argument
                         'endpoint': 'ticker',\
                         'symbol': symbol
                     }\
+            ]
+
+    streams = [
+                    # {
+                    #     'endpoint': 'kline',
+                    #     'symbol': symbol,
+                    #     'interval': interval
+                    # },
+                    # {
+                    #     'endpoint': 'kline',
+                    #     'symbol': symbol,
+                    #     'interval': '5m'
+                    # },
+                    {
+                        'endpoint': 'kline',
+                        'symbol': symbol,
+                        'interval': '15m'
+                    }
             ]
 
     wsm = Ccxw(exchange,\

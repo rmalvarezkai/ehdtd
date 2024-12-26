@@ -1800,6 +1800,13 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
         return result
 
+    def get_websocket_kline_current_data(self, symbol, interval, last_n_values=9):
+        """
+        get_websocket_kline_current_data
+        ================================
+        """
+        return self.__get_websocket_kline_current_data(symbol, interval, last_n_values)
+
     def __get_websocket_kline_current_data(self, symbol, interval, last_n_values=9):
         result = None
 
@@ -2587,7 +2594,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         __result = None
 
         __result = (
-            EhdtdExchangeConfig.exchange_classes[exchange]().get_exchange_connectivity()
+            EhdtdExchangeConfig.exchange_classes[exchange].get_exchange_connectivity()
         )
 
         return __result
@@ -2620,7 +2627,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         __result = None
 
         __exchange_intervals = (
-            EhdtdExchangeConfig.exchange_classes[exchange]().get_supported_intervals()
+            EhdtdExchangeConfig.exchange_classes[exchange].get_supported_intervals()
         )
 
         __ehdtd_intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h',\
@@ -2647,7 +2654,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         """
         __result = None
 
-        __result = EhdtdExchangeConfig.exchange_classes[exchange]().not_daily_data(cls)
+        __result = EhdtdExchangeConfig.exchange_classes[exchange].not_daily_data()
 
         return __result
 

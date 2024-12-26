@@ -30,8 +30,8 @@ def main(argv): # pylint: disable=unused-argument
     # exchange = 'bybit'
     # exchange = 'okx'
     # exchange = 'kucoin'
-    # exchange = 'bingx'
-    exchange = 'binanceus'
+    exchange = 'bingx'
+    # exchange = 'binanceus'
 
     debug = False
     get_data = True
@@ -53,8 +53,8 @@ def main(argv): # pylint: disable=unused-argument
 
     stop_flag_file = '/tmp/stop_getting_data.txt'
 
-    symbols = ['BTC/USDT', 'BNB/USDT', 'ETH/USDT', 'LTC/USDT']
-    # symbols = ['BTC/USDT']
+    # symbols = ['BTC/USDT', 'BNB/USDT', 'ETH/USDT', 'LTC/USDT']
+    symbols = ['BTC/USDT']
     # symbols = ['YFI/USDC']
     # symbols = ['NOT/USDT']
 
@@ -77,6 +77,7 @@ def main(argv): # pylint: disable=unused-argument
     time_wait = 14
     time_limit = 450
     time_limit = 28800
+    time_limit = 140
 
     fetch_data = []
 

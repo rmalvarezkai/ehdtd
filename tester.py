@@ -24,6 +24,7 @@ from ehdtd.okx import OkxEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.kucoin import KucoinEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.bingx import BingxEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.binanceus import BinanceusEhdtdAuxClass # pylint: disable=unused-import
+from ccxw import Ccxw
 
 # from ehdtd.binance import BinanceEhdtdAuxClass
 import ehdtd.ehdtd_common_functions as ecf # pylint: disable=unused-import
@@ -35,6 +36,42 @@ def main(argv): # pylint: disable=unused-argument
     """
 
     result = False
+
+    __exchange = 'bingx'
+
+    __endpoint = 'kline'
+    __symbol = 'BTC/USDT'
+    __interval = '1m'
+    __streams = []
+
+    __stream = {}
+    __stream['endpoint'] = __endpoint
+    __stream['symbol'] = __symbol
+    __stream['interval'] = __interval
+    __streams.append(__stream)
+
+    __data_max_len = 5
+
+    __ccxw_class = Ccxw(__exchange,\
+                        __streams,\
+                        data_max_len=__data_max_len,\
+                        result_max_len=__data_max_len,\
+                        debug=False)
+
+
+    __ccxw_class.start()
+
+    time.sleep(9)
+    for _ in range(0, 10):
+        __data = __ccxw_class.get_current_data(__endpoint, __symbol, __interval)
+        pprint.pprint(__data, sort_dicts=False)
+        print('=' * 80)
+        time.sleep(5)
+
+    __ccxw_class.stop()
+
+    return result
+
 
     __aux_skel_class = BinanceEhdtdAuxClass
     __aux_test_class = BinanceusEhdtdAuxClass

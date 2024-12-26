@@ -668,8 +668,8 @@ class BinanceEhdtdAuxClass():
     @classmethod
     def not_daily_data(cls):
         """
-        Ehdtd get_supported_intervals function.
-        =======================================
+        Ehdtd not_daily_data function.
+        ==============================
             This method return a list of not daily data for this intervals.
                 :param cls: BinanceEhdtdAuxClass Class.
 
