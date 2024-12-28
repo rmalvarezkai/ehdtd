@@ -77,7 +77,7 @@ def main(argv): # pylint: disable=unused-argument
     time_wait = 14
     time_limit = 450
     time_limit = 28800
-    time_limit = 140
+    # time_limit = 140
 
     fetch_data = []
 
