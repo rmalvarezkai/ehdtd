@@ -2385,8 +2385,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     logging.Formatter('%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S -')
                 )
 
-                log_handler = logging.FileHandler(self.__log_logger_file)
-                log_handler_w = logging.handlers.WatchedFileHandler(self.__log_logger_file)
+                log_handler = logging.handlers.WatchedFileHandler(self.__log_logger_file)
                 log_handler.setFormatter(__log_formatter)
                 self.__log_logger = logging.getLogger(f'EHDTD_{self.__exchange.upper()}_LOG')
                 self.__log_logger.setLevel(logging.INFO)
@@ -2395,10 +2394,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     self.__log_logger.removeHandler(handler)
 
                 self.__log_logger.addHandler(log_handler)
-                self.__log_logger.addHandler(log_handler_w)
 
-                err_handler = logging.FileHandler(self.__err_logger_file)
-                err_handler_w = logging.handlers.WatchedFileHandler(self.__err_logger_file)
+                err_handler = logging.handlers.WatchedFileHandler(self.__err_logger_file)
                 err_handler.setFormatter(__err_formatter)
                 self.__err_logger = logging.getLogger(f'EHDTD_{self.__exchange.upper()}_ERR')
                 self.__err_logger.setLevel(logging.ERROR)
@@ -2407,7 +2404,6 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     self.__err_logger.removeHandler(handler)
 
                 self.__err_logger.addHandler(err_handler)
-                self.__err_logger.addHandler(err_handler_w)
                 result = True
 
             except Exception: # pylint: disable=broad-except
