@@ -7,7 +7,6 @@ Author: Ricardo Marcelo Alvarez
 Date: 2023-11-23
 """
 
-import logging.handlers
 import os
 import sys
 import json
@@ -19,6 +18,7 @@ import datetime
 import calendar
 import hashlib
 import logging
+import logging.handlers
 import pprint # pylint: disable=unused-import
 import schedule
 import sqlalchemy
@@ -228,6 +228,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         self.__signals_queue_checks = {}
 
         self.__ccxw_class = None
+        self.__ccxw_class_lock = threading.Lock()
 
         if isinstance(db_data, dict) and all(key in db_data for key in\
             ['db_type', 'db_name', 'db_user', 'db_pass', 'db_host', 'db_port']):
@@ -240,6 +241,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 if db_data['db_type'] in Ehdtd.get_supported_databases():
                     self.__db_type = db_data['db_type']
                 else:
+                    self.__stop_running = True
                     raise ValueError('The database type '\
                                      + str(db_data['db_type'])\
                                      + ' is not supported.')
@@ -264,6 +266,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 except Exception as exc: # pylint: disable=broad-except
                     err_msg = 'Error on create Ehdtd instance' + str(exc)
                     print(err_msg)
+                    self.__stop_running = True
 
                 try:
                     __streams = []
@@ -286,6 +289,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 except Exception as exc: # pylint: disable=broad-except
                     err_msg = f'Error on create Ccxw instance {exc}'
                     print(err_msg)
+                    self.__stop_running = True
 
         if self.check_fetch_data_struct(fetch_data):
 
@@ -305,6 +309,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 except Exception as exc: # pylint: disable=broad-except
                     err_msg = 'Error on create Ehdtd instance' + str(exc)
                     print(err_msg)
+                    self.__stop_running = True
 
             if self.__create_cache_table():
 
@@ -320,9 +325,11 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                     self.__fetch_data.append(__add_f_data)
             else:
+                self.__stop_running = True
                 raise ValueError('Database problem.')
 
         else:
+            self.__stop_running = True
             raise ValueError('fetch_data is invalid.')
 
 
@@ -335,6 +342,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
             if self.__db_metadata is not None and __table_name not in self.__db_metadata.tables:
                 if not self.__create_klines_table(__f_data['symbol'], __f_data['interval']):
+                    self.__stop_running = True
                     raise ValueError('Create table problem.')
 
             self.__db_table_partition_test_and_create(__f_data['symbol'],\
@@ -506,7 +514,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
         msg_out = f'BEGIN TEST AND CREATE PARTITION TABLE, exchange: {self.__exchange}'
         msg_out += f', symbol: {symbol}, interval: {interval}, table_name: {table_name}'
-        self.__log_logger.info(msg_out)
+        if self.__log_logger is not None:
+            self.__log_logger.info(msg_out)
 
         __min_year, __min_month = (
             self.get_symbol_first_year_month_listed(symbol, interval)
@@ -573,13 +582,15 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
                     err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
 
-                    self.__err_logger.error(err_msg)
+                    if self.__err_logger is not None:
+                        self.__err_logger.error(err_msg)
                     result = False
 
         msg_out = f'END TEST AND CREATE PARTITION TABLE, exchange: {self.__exchange}'
         msg_out += f', symbol: {symbol}, interval: {interval}, table_name: {table_name}'
 
-        self.__log_logger.info(msg_out)
+        if self.__log_logger is not None:
+            self.__log_logger.info(msg_out)
 
         return result
 
@@ -650,7 +661,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
                 err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
                 err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-                self.__err_logger.error(err_msg)
+                if self.__err_logger is not None:
+                    self.__err_logger.error(err_msg)
 
                 result = None
 
@@ -692,7 +704,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
                 err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
                 err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-                self.__err_logger.error(err_msg)
+                if self.__err_logger is not None:
+                    self.__err_logger.error(err_msg)
 
                 result = False
 
@@ -750,7 +763,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
             err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}, error: {exc}'
             err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-            self.__err_logger.error(err_msg)
+            if self.__err_logger is not None:
+                self.__err_logger.error(err_msg)
 
             result = None
 
@@ -827,7 +841,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
                 err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
                 err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-                self.__err_logger.error(err_msg)
+                if self.__err_logger is not None:
+                    self.__err_logger.error(err_msg)
 
                 result = False
 
@@ -1099,7 +1114,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
             err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
             err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-            self.__err_logger.error(err_msg)
+            if self.__err_logger is not None:
+                self.__err_logger.error(err_msg)
 
             stmt = None
 
@@ -1196,7 +1212,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
         try:
             log_msg = f'Starting {__l_function}, exchange: {self.__exchange}'
-            self.__log_logger.info(log_msg)
+            if self.__log_logger is not None:
+                self.__log_logger.info(log_msg)
 
             for __data in self.__fetch_data:
                 __symbol = __data['symbol']
@@ -1211,22 +1228,26 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 log_msg += f' exchange: {self.__exchange}'
                 log_msg += f', symbol: {__symbol}, interval: {__interval}'
                 log_msg += f', start_time: {__start_time}'
-                self.__log_logger.info(log_msg)
+                if self.__log_logger is not None:
+                    self.__log_logger.info(log_msg)
 
                 __db_errors = self.check_database_data(__symbol, __interval, __start_time)
                 result = self.try_to_fix_database_data(__db_errors['result']) and result
 
                 log_msg = f'{__l_function} ending checking and fixing, exchange: {self.__exchange}'
                 log_msg += f', symbol: {__symbol}, interval: {__interval}'
-                self.__log_logger.info(log_msg)
+                if self.__log_logger is not None:
+                    self.__log_logger.info(log_msg)
 
             log_msg = f'Ending {__l_function}, exchange: {self.__exchange}'
-            self.__log_logger.info(log_msg)
+            if self.__log_logger is not None:
+                self.__log_logger.info(log_msg)
 
         except Exception as exc: # pylint: disable=broad-except
             err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
             err_msg += f', symbol: {__symbol}, interval: {__interval}, error: {exc}'
-            self.__err_logger.error(err_msg)
+            if self.__err_logger is not None:
+                self.__err_logger.error(err_msg)
             time.sleep(5)
             result = False
 
@@ -1303,12 +1324,14 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
             str_out = f'{__l_function} Ended check database data OK: exchange: {self.__exchange}'
             str_out += f', symbol: {symbol}, interval: {interval}'
-            self.__log_logger.info(str_out)
+            if self.__log_logger is not None:
+                self.__log_logger.info(str_out)
 
         else:
             str_out = f'{__l_function} Ended check database data ERROR: exchange: {self.__exchange}'
             str_out += f', symbol: {symbol}, interval: {interval}'
-            self.__log_logger.info(str_out)
+            if self.__log_logger is not None:
+                self.__log_logger.info(str_out)
 
         if db_conn:
             db_conn.close()
@@ -1493,7 +1516,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
                 err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
                 err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-                self.__err_logger.error(err_msg)
+                if self.__err_logger is not None:
+                    self.__err_logger.error(err_msg)
                 time.sleep(5)
 
                 result = None
@@ -1530,7 +1554,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
             str_out = f'Begin Trying to fix database data: exchange: {self.__exchange}'
             str_out += f', symbol: {symbol}, interval: {interval}'
-            self.__log_logger.info(str_out)
+            if self.__log_logger is not None:
+                self.__log_logger.info(str_out)
 
             for __error_node in data:
                 __get_node_data_ot = int(__error_node['open_time']) - round((0.5 * __delta_seconds))
@@ -1578,11 +1603,13 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 else:
                     str_out += ' -> NO'
 
-                self.__log_logger.info(str_out)
+                if self.__log_logger is not None:
+                    self.__log_logger.info(str_out)
 
             str_out = f'End Trying to fix database data: exchange: {self.__exchange}'
             str_out += f', symbol: {symbol}, interval: {interval}'
-            self.__log_logger.info(str_out)
+            if self.__log_logger is not None:
+                self.__log_logger.info(str_out)
 
         if db_conn:
             db_conn.close()
@@ -1593,7 +1620,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         result = True
 
         msg_out = f'BEGIN MAIN THREAD, exchange: {self.__exchange}'
-        self.__log_logger.info(msg_out)
+        if self.__log_logger is not None:
+            self.__log_logger.info(msg_out)
 
         __l_queue = self.__signals_queue_gets['__MAIN_THREAD__']
 
@@ -1602,13 +1630,16 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
         __diff_threads_limit = 3
 
-        self.__ccxw_class.start()
+        with self.__ccxw_class_lock:
+            self.__ccxw_class.start()
 
         time.sleep(45)
 
         msg_out = 'CCXW Sqlite temporal database size '
-        msg_out += f'{self.__ccxw_class.get_sqlite_memory_used_human_readable()}'
-        self.__log_logger.info(msg_out)
+        with self.__ccxw_class_lock:
+            msg_out += f'{self.__ccxw_class.get_sqlite_memory_used_human_readable()}'
+        if self.__log_logger is not None:
+            self.__log_logger.info(msg_out)
 
         __stop_run_main_thd = False
         message = None
@@ -1645,10 +1676,12 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 __time_end = time.time()
                 if (__time_end - __time_ini) > __sqlite_log_interval_time:
                     msg_out = 'CCXW Sqlite temporal database size '
-                    msg_out += (
-                        f'{self.__ccxw_class.get_sqlite_memory_used_human_readable()}'
-                    )
-                    self.__log_logger.info(msg_out)
+                    with self.__ccxw_class_lock:
+                        msg_out += (
+                            f'{self.__ccxw_class.get_sqlite_memory_used_human_readable()}'
+                        )
+                    if self.__log_logger is not None:
+                        self.__log_logger.info(msg_out)
                     __time_ini = __time_end
 
                 if message is not None and isinstance(message, str):
@@ -1673,6 +1706,14 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 self.check_and_fix_database_data(__start_time)
                 __last_check_time = int(time.time())
 
+            if not __stop_run_main_thd:
+                with self.__ccxw_class_lock:
+                    if not self.__ccxw_class.is_connections_ok():
+                        self.__ccxw_class.stop()
+                        time.sleep(9)
+                        self.__ccxw_class.start()
+                        time.sleep(9)
+
         with self.__lock_schedule:
             if __schedule_task is not None:
                 schedule.cancel_job(__schedule_task)
@@ -1684,15 +1725,19 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             for __table in __tables:
                 if self.__chk_db_all_symbols_thd[__table] is not None\
                     and self.__chk_db_all_symbols_thd[__table].is_alive():
-                    self.__chk_db_all_symbols_thd[__table].join(300)
+                    self.__chk_db_all_symbols_thd[__table].join(30)
 
         msg_out = 'CCXW Sqlite temporal database size '
-        msg_out += f'{self.__ccxw_class.get_sqlite_memory_used_human_readable()}'
-        self.__log_logger.info(msg_out)
+        with self.__ccxw_class_lock:
+            msg_out += f'{self.__ccxw_class.get_sqlite_memory_used_human_readable()}'
+        if self.__log_logger is not None:
+            self.__log_logger.info(msg_out)
 
-        self.__ccxw_class.stop()
+        with self.__ccxw_class_lock:
+            self.__ccxw_class.stop()
         msg_out = f'END MAIN THREAD, exchange: {self.__exchange}'
-        self.__log_logger.info(msg_out)
+        if self.__log_logger is not None:
+            self.__log_logger.info(msg_out)
 
         return result
 
@@ -1730,7 +1775,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 err_msg = (
                     f'Found error in {__l_function}, exchange: {self.__exchange}, error: {exc}'
                 )
-                self.__err_logger.error(err_msg)
+                if self.__err_logger is not None:
+                    self.__err_logger.error(err_msg)
 
                 result = False
 
@@ -1764,7 +1810,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
         return result
 
-    def stop(self, time_to_wait=300):
+    def stop(self, time_to_wait=90):
         """
         stop
         ====
@@ -1815,7 +1861,9 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         endpoint = 'kline'
 
         try:
-            __current_data = self.__ccxw_class.get_current_data(endpoint, symbol, interval)
+            __current_data = None
+            with self.__ccxw_class_lock:
+                __current_data = self.__ccxw_class.get_current_data(endpoint, symbol, interval)
 
             if __current_data is not None\
                 and isinstance(__current_data, dict)\
@@ -1849,7 +1897,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         except Exception as exc: # pylint: disable=broad-except
             err_msg = f'Found error in {__l_function}, {self.__exchange}'
             err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-            self.__err_logger.error(err_msg)
+            if self.__err_logger is not None:
+                self.__err_logger.error(err_msg)
             result = None
 
         return result
@@ -1864,7 +1913,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
         msg_out = f'BEGIN THREAD: exchange: {self.__exchange}'
         msg_out += f', symbol: {symbol}, interval: {interval}'
-        self.__log_logger.info(msg_out)
+        if self.__log_logger is not None:
+            self.__log_logger.info(msg_out)
 
         __schedule_task_0 = None
         __schedule_task_1 = None
@@ -1894,7 +1944,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             except Exception as exc: # pylint: disable=broad-except
                 err_msg = f'Found error in {__l_function}, {self.__exchange}'
                 err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-                self.__err_logger.error(err_msg)
+                if self.__err_logger is not None:
+                    self.__err_logger.error(err_msg)
 
                 message = None
 
@@ -1954,7 +2005,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 except Exception as exc: # pylint: disable=broad-except
                     err_msg = f'Found error in {__l_function}, {self.__exchange}'
                     err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-                    self.__err_logger.error(err_msg)
+                    if self.__err_logger is not None:
+                        self.__err_logger.error(err_msg)
                     message = None
 
                 time.sleep(__interval_sleep)
@@ -1976,7 +2028,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
         msg_out = f'END THREAD: exchange: {self.__exchange}'
         msg_out += f', symbol: {symbol}, interval: {interval}'
-        self.__log_logger.info(msg_out)
+        if self.__log_logger is not None:
+            self.__log_logger.info(msg_out)
 
         return result
 
@@ -2027,7 +2080,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         else:
             str_out += ' -> NO'
 
-        self.__log_logger.info(str_out)
+        if self.__log_logger is not None:
+            self.__log_logger.info(str_out)
 
         if interval == '1mo':
             __last_time_in_db = (
@@ -2089,7 +2143,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 str_out += ' -> NO'
                 try_counter += 1
 
-            self.__log_logger.info(str_out)
+            if self.__log_logger is not None:
+                self.__log_logger.info(str_out)
 
             if try_counter > try_counter_limit:
                 __stop_run = True
@@ -2106,7 +2161,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             except Exception as exc: # pylint: disable=broad-except
                 err_msg = f'Found error in {__l_function}, {self.__exchange}'
                 err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-                self.__err_logger.error(err_msg)
+                if self.__err_logger is not None:
+                    self.__err_logger.error(err_msg)
                 result = False
 
                 message = None
@@ -2196,7 +2252,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 str_out += ' -> NO'
                 try_counter += 1
 
-            self.__log_logger.info(str_out)
+            if self.__log_logger is not None:
+                self.__log_logger.info(str_out)
 
             if try_counter == 0 or try_counter > try_counter_limit:
                 __year, __month = Ehdtd.get_next_year_month(__year, __month)
@@ -2223,7 +2280,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             except Exception as exc: # pylint: disable=broad-except
                 err_msg = f'Found error in {__l_function}, {self.__exchange}'
                 err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-                self.__err_logger.error(err_msg)
+                if self.__err_logger is not None:
+                    self.__err_logger.error(err_msg)
                 result = False
 
             time.sleep(1)
@@ -2358,7 +2416,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
             err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
             err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
-            self.__err_logger.error(err_msg)
+            if self.__err_logger is not None:
+                self.__err_logger.error(err_msg)
             time.sleep(5)
 
             result = None
