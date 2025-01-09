@@ -1709,10 +1709,21 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             if not __stop_run_main_thd:
                 with self.__ccxw_class_lock:
                     if not self.__ccxw_class.is_connections_ok():
+                        msg_out = f'Ccxw connection fail for exchange {self.__exchange}'
+                        msg_out += ' restarting Ccxw INI'
+
+                        if self.__log_logger is not None:
+                            self.__log_logger.info(msg_out)
+
                         self.__ccxw_class.stop()
                         time.sleep(9)
                         self.__ccxw_class.start()
                         time.sleep(9)
+                        msg_out = f'Ccxw connection fail for exchange {self.__exchange}'
+                        msg_out += ' restarting Ccxw END'
+
+                        if self.__log_logger is not None:
+                            self.__log_logger.info(msg_out)
 
         with self.__lock_schedule:
             if __schedule_task is not None:
