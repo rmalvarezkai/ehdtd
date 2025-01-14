@@ -227,6 +227,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         self.__signals_queue_gets = {}
         self.__signals_queue_checks = {}
 
+        self.__streams = None
         self.__ccxw_class = None
         self.__ccxw_class_lock = threading.Lock()
 
@@ -269,27 +270,21 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     self.__stop_running = True
 
                 try:
-                    __streams = []
+                    self.__streams = []
 
                     for fetch_data_node in fetch_data:
                         __stream = {}
                         __stream['endpoint'] = 'kline'
                         __stream['symbol'] = fetch_data_node['symbol']
                         __stream['interval'] = fetch_data_node['interval']
-                        __streams.append(__stream)
-
-                    __data_max_len = 40
-
-                    self.__ccxw_class = Ccxw(self.__exchange,\
-                                             __streams,\
-                                             data_max_len=__data_max_len,\
-                                             result_max_len=__data_max_len,\
-                                             debug=self.__debug)
+                        self.__streams.append(__stream)
 
                 except Exception as exc: # pylint: disable=broad-except
-                    err_msg = f'Error on create Ccxw instance {exc}'
+                    err_msg = f'Error on create streams for Ccxw instance {exc}'
                     print(err_msg)
                     self.__stop_running = True
+
+                self.__set_ccxw_class()
 
         if self.check_fetch_data_struct(fetch_data):
 
@@ -356,6 +351,28 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         self.__threads = None
         self.__is_threads_running = False
         self.__stop_running = False
+
+    def __set_ccxw_class(self, data_max_len=40):
+        result = False
+
+        try:
+            self.__ccxw_class = None
+            time.sleep(5)
+            __data_max_len = 40
+            self.__ccxw_class = Ccxw(self.__exchange,\
+                                     self.__streams,\
+                                     data_max_len=data_max_len,\
+                                     result_max_len=data_max_len,\
+                                     debug=self.__debug)
+            result = True
+
+        except Exception as exc: # pylint: disable=broad-except
+            err_msg = f'Error on create Ccxw instance {exc}'
+            print(err_msg)
+            self.__stop_running = True
+            result = False
+
+        return result
 
     def __del__(self):
         if hasattr(self, '__is_threads_running')\
@@ -1716,6 +1733,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                             self.__log_logger.info(msg_out)
 
                         self.__ccxw_class.stop()
+                        time.sleep(9)
+                        self.__set_ccxw_class()
                         time.sleep(9)
                         self.__ccxw_class.start()
                         time.sleep(9)
