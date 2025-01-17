@@ -2392,7 +2392,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                                         .select_from(table)\
                                         .where(sqlalchemy.and_(\
                                             sqlalchemy.column(column_open_time) >= start_from),\
-                                            sqlalchemy.column(column_open_time) <= until_to)\
+                                            sqlalchemy.column(column_close_time) <= until_to)\
                                         .order_by(sqlalchemy.column(column_open_time).asc())
 
             results = db_conn_local.execute(stmt).fetchall()
@@ -3306,7 +3306,7 @@ class EhdtdRO():
                                         .select_from(table)\
                                         .where(sqlalchemy.and_(\
                                             sqlalchemy.column(column_open_time) >= start_from),\
-                                            sqlalchemy.column(column_open_time) <= until_to)\
+                                            sqlalchemy.column(column_close_time) <= until_to)\
                                         .order_by(sqlalchemy.column(column_open_time).asc())
 
             results = db_conn_local.execute(stmt).fetchall()
