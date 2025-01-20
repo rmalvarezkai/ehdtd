@@ -287,11 +287,12 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 self.__set_ccxw_class()
 
                 if not self.__set_ccxw_class() or self.__ccxw_class is None:
-                    __msg_out = f'Error on create Ccxw instance in exchange {self.__exchange}'
-                    __msg_out += f' {self.__trading_type}'
+                    __msg_err = f'Error on create Ccxw instance in exchange {self.__exchange}'
+                    __msg_err += f' {self.__trading_type}'
 
-                    raise ValueError(__msg_out)
-
+                    if self.log_enabled:
+                        self.__err_logger.error(__msg_err)
+                    raise ValueError(__msg_err)
 
         if self.check_fetch_data_struct(fetch_data):
 
