@@ -230,6 +230,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         self.__streams = None
         self.__ccxw_class = None
         self.__ccxw_class_lock = threading.Lock()
+        self.__stop_running = False
 
         if isinstance(db_data, dict) and all(key in db_data for key in\
             ['db_type', 'db_name', 'db_user', 'db_pass', 'db_host', 'db_port']):
@@ -284,8 +285,6 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     print(err_msg)
                     self.__stop_running = True
 
-                self.__set_ccxw_class()
-
                 if not self.__set_ccxw_class() or self.__ccxw_class is None:
                     __msg_err = f'Error on create Ccxw instance in exchange {self.__exchange}'
                     __msg_err += f' {self.__trading_type}'
@@ -293,6 +292,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     if self.log_enabled:
                         self.__err_logger.error(__msg_err)
                     raise ValueError(__msg_err)
+
 
         if self.check_fetch_data_struct(fetch_data):
 
@@ -335,7 +335,6 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             self.__stop_running = True
             raise ValueError('fetch_data is invalid.')
 
-
         for __f_data in self.__fetch_data:
             __table_name = self.__get_table_name(__f_data['symbol'], __f_data['interval'])
 
@@ -346,6 +345,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             if self.__db_metadata is not None and __table_name not in self.__db_metadata.tables:
                 if not self.__create_klines_table(__f_data['symbol'], __f_data['interval']):
                     self.__stop_running = True
+
                     raise ValueError('Create table problem.')
 
             self.__db_table_partition_test_and_create(__f_data['symbol'],\

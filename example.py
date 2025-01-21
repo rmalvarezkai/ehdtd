@@ -5,6 +5,7 @@ Example use.
 
 Author: Ricardo Marcelo Alvarez
 Date: 2023-11-23
+
 """
 
 import sys
@@ -26,12 +27,12 @@ def main(argv): # pylint: disable=unused-argument
 
     result = 1
 
-    # exchange = 'binance'
-    # exchange = 'bybit'
-    # exchange = 'okx'
-    # exchange = 'kucoin'
+    exchange = 'binance'
+    exchange = 'binanceus'
+    exchange = 'bybit'
+    exchange = 'okx'
+    exchange = 'kucoin'
     exchange = 'bingx'
-    # exchange = 'binanceus'
 
     debug = False
     get_data = True
@@ -65,8 +66,8 @@ def main(argv): # pylint: disable=unused-argument
     db_data = {}
     #db_data['db_type'] = 'mysql' # postgresql, mysql
     db_data['db_type'] = 'postgresql' # postgresql, mysql
-    db_data['db_name'] = 'ehdtd'
-    db_data['db_user'] = 'ehdtd'
+    db_data['db_name'] = 'ehdtd_dev'
+    db_data['db_user'] = 'ehdtd_dev'
     db_data['db_pass'] = 'ehdtd_9898'
     db_data['db_host'] = '127.0.0.1'
     db_data['db_port'] = '5432'
@@ -77,7 +78,8 @@ def main(argv): # pylint: disable=unused-argument
     time_wait = 14
     time_limit = 450
     # time_limit = 28800
-    # time_limit = 140
+    time_limit = 140
+    # time_limit = 230
 
     fetch_data = []
 
@@ -90,10 +92,24 @@ def main(argv): # pylint: disable=unused-argument
             fetch_data_n['interval'] = interval
             fetch_data.append(fetch_data_n)
 
+
+    # print('INI: test __del__ function')
+    # exchanges = Ehdtd.get_supported_exchanges()
+    # ehds_test = []
+
+    # for exchange_test in exchanges:
+    #     ehd_test = Ehdtd(exchange_test, fetch_data, db_data, debug=debug)
+    #     ehds_test.append(ehd_test)
+
+    # ehds_test = None
+    # print('END: test __del__ function')
+
     ehd = Ehdtd(exchange, fetch_data, db_data, debug=debug)  # Create instance
 
     if get_data:
+
         ehd.start()
+
         time.sleep(50)
 
         is_stopped = False
@@ -120,15 +136,16 @@ def main(argv): # pylint: disable=unused-argument
                 # return_type = 'list_consistent_streams'
                 # return_type = 'list_consistent_streams_pandas'
 
+                # pylint: disable=unused-variable
                 data_db = ehd.get_data_from_db(__data_fetch['symbol'],\
                                                __data_fetch['interval'],\
                                                start_from,\
                                                until_to,\
                                                return_type)
 
-                pprint.pprint(data_db, sort_dicts=False)
-                print('+' * 72)
-            print('=' * 80)
+                # pprint.pprint(data_db, sort_dicts=False)
+                # print('+' * 72)
+            # print('=' * 80)
 
 
             if os.path.exists(stop_flag_file):

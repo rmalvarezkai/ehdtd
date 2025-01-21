@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ehdtd"
-version = "0.2.28"
+version = "0.2.29"
 description = "Ehdtd - cryptoCurrency Exchange history data to database"
 authors = ["Ricardo Marcelo Alvarez <rmalvarezkai@gmail.com>"]
 readme = "README.md"
@@ -8,24 +8,24 @@ license = "MIT"
 homepage = "https://github.com/rmalvarezkai/ehdtd"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 importlib = "^1.0.4"
-sqlalchemy = "^2.0.23"
-psycopg2-binary = "^2.9.9"
+sqlalchemy = "^2.0.37"
+psycopg2-binary = "^2.9.10"
 thread6 = "^0.2.0"
-pymysql = "^1.1.0"
-schedule = "^1.2.1"
+pymysql = "^1.1.1"
+schedule = "^1.2.2"
 logging = "^0.4.9.6"
-ccxw = ">=0.2.23"
-pandas = "^2.2.1"
-ccxt = "^4.4.37"
+ccxw = "^0.2.27"
+pandas = "^2.2.3"
+ccxt = "^4.4.50"
 
 
 [tool.poetry.group.dev.dependencies]
-pylint = "^3.0.2"
-pytest = "^7.4.3"
-pytest-xdist = "^3.5.0"
-ipykernel = "^6.29.4"
+pylint = "^3.3.3"
+pytest = "^8.3.4"
+pytest-xdist = "^3.6.1"
+ipykernel = "^6.29.5"
 sympy = "^1.13.3"
 
 [build-system]

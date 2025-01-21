@@ -17,6 +17,7 @@ import json # pylint: disable=unused-import
 import pprint # pylint: disable=unused-import
 
 import ccxt # pylint: disable=unused-import
+from ccxw import Ccxw
 from ehdtd import Ehdtd # pylint: disable=unused-import
 from ehdtd.binance import BinanceEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.bybit import BybitEhdtdAuxClass # pylint: disable=unused-import
@@ -24,7 +25,6 @@ from ehdtd.okx import OkxEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.kucoin import KucoinEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.bingx import BingxEhdtdAuxClass # pylint: disable=unused-import
 from ehdtd.binanceus import BinanceusEhdtdAuxClass # pylint: disable=unused-import
-from ccxw import Ccxw
 
 # from ehdtd.binance import BinanceEhdtdAuxClass
 import ehdtd.ehdtd_common_functions as ecf # pylint: disable=unused-import
