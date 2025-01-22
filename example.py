@@ -32,7 +32,7 @@ def main(argv): # pylint: disable=unused-argument
     exchange = 'bybit'
     exchange = 'okx'
     exchange = 'kucoin'
-    exchange = 'bingx'
+    # exchange = 'bingx'
 
     debug = False
     get_data = True
@@ -60,7 +60,7 @@ def main(argv): # pylint: disable=unused-argument
     # symbols = ['NOT/USDT']
 
     intervals = Ehdtd.get_supported_intervals(exchange)
-    intervals = ['1m', '5m', '15m']
+    intervals = ['1m', '5m', '15m', '1h']
     # intervals = ['1m']
 
     db_data = {}
