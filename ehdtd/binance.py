@@ -247,17 +247,26 @@ class BinanceEhdtdAuxClass():
             for row in reader:
 
                 open_time = int(round(int(row['open_time'])/1000))
+                close_time = int(round(int(row['close_time'])/1000))
+                open_year_check = time.strftime("%Y", time.gmtime(open_time))
+                close_year_check = time.strftime("%Y", time.gmtime(close_time))
+
+                if len(open_year_check) > 4:
+                    open_time = int(open_time/1000)
+
+                if len(close_year_check) > 4:
+                    close_time = int(close_time/1000)
 
                 data_line = None
                 data_line = {}
                 data_line['open_time'] = open_time
                 data_line['open_date'] = (
-                    time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(open_time))
+                    time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(open_time))
                 )
                 data_line['open_price'] = row['open_price']
-                data_line['close_time'] = int(round(int(row['close_time'])/1000))
+                data_line['close_time'] = close_time
                 data_line['close_date'] = (
-                    time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(data_line['close_time']))
+                    time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime(close_time))
                 )
                 data_line['close_price'] = row['close_price']
                 data_line['low'] = row['low']

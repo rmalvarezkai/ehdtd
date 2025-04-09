@@ -15,6 +15,7 @@ import time
 import base64
 import queue
 import datetime
+import inspect
 import calendar
 import hashlib
 import logging
@@ -863,8 +864,19 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 db_conn.commit()
 
             except Exception as exc: # pylint: disable=broad-except
+                __caller_name = ''
+                __pre_caller_name = ''
+                pre_frame = None
+                frame = inspect.currentframe().f_back
+                if frame:
+                    __caller_name = frame.f_code.co_name
+                    pre_frame = frame.f_back
+                if pre_frame:
+                    __pre_caller_name = pre_frame.f_code.co_name
+
                 __l_function = sys._getframe().f_code.co_name # pylint: disable=protected-access
-                err_msg = f'Found error in {__l_function}, exchange: {self.__exchange}'
+                err_msg = f'Found error in {__l_function}, caller: {__caller_name},'
+                err_msg += f' precaller: {__pre_caller_name}, exchange: {self.__exchange}'
                 err_msg += f', symbol: {symbol}, interval: {interval}, error: {exc}'
                 if self.__err_logger is not None:
                     self.__err_logger.error(err_msg)

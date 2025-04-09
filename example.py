@@ -28,10 +28,10 @@ def main(argv): # pylint: disable=unused-argument
     result = 1
 
     exchange = 'binance'
-    exchange = 'binanceus'
-    exchange = 'bybit'
-    exchange = 'okx'
-    exchange = 'kucoin'
+    # exchange = 'binanceus'
+    # exchange = 'bybit'
+    # exchange = 'okx'
+    # exchange = 'kucoin'
     # exchange = 'bingx'
 
     debug = False
@@ -60,7 +60,7 @@ def main(argv): # pylint: disable=unused-argument
     # symbols = ['NOT/USDT']
 
     intervals = Ehdtd.get_supported_intervals(exchange)
-    intervals = ['1m', '5m', '15m', '1h']
+    intervals = ['5m', '15m', '1h']
     # intervals = ['1m']
 
     db_data = {}
@@ -76,9 +76,9 @@ def main(argv): # pylint: disable=unused-argument
         db_data['db_port'] = '3306'
 
     time_wait = 14
-    time_limit = 450
+    time_limit = 2700
     # time_limit = 28800
-    time_limit = 140
+    # time_limit = 140
     # time_limit = 230
 
     fetch_data = []
@@ -104,7 +104,9 @@ def main(argv): # pylint: disable=unused-argument
     # ehds_test = None
     # print('END: test __del__ function')
 
-    ehd = Ehdtd(exchange, fetch_data, db_data, debug=debug)  # Create instance
+    log_dir = '.log'
+
+    ehd = Ehdtd(exchange, fetch_data, db_data, log_dir=log_dir, debug=debug)  # Create instance
 
     if get_data:
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ehdtd"
-version = "0.2.30"
+version = "0.2.32"
 description = "Ehdtd - cryptoCurrency Exchange history data to database"
 authors = ["Ricardo Marcelo Alvarez <rmalvarezkai@gmail.com>"]
 readme = "README.md"
