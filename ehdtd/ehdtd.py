@@ -2168,12 +2168,13 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         try_counter_limit = 5
         try_counter = 0
         __stop_run = False
+        __delta_time = 0
 
         while not __stop_run\
             and __last_time_in_db < (__current_time - ((2 * __delta_seconds) + 1)):
 
             __last_time_in_db = self.get_last_close_time_in_db(symbol, interval, db_conn)
-            __start_time = __last_time_in_db - (10 * __delta_seconds)
+            __start_time = __last_time_in_db - (10 * __delta_seconds) + __delta_time
             __year, __month, __day = self.get_ymd_from_time(__start_time)
 
             str_out = f'{__l_function}: GET THIS DATA (From kline api endpoint): '
@@ -2195,9 +2196,15 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     if __last_time_in_db_cmp > __last_time_in_db:
                         str_out += ' -> YES'
                         try_counter = 0
+                        __delta_time = 0
                     else:
                         str_out += ' -> NO'
-                        try_counter += 1
+                        if try_counter > try_counter_limit:
+                            __delta_time = 250 * __delta_seconds
+                            try_counter = 0
+                        else:
+                            try_counter += 1
+                            __delta_time = 0
                 else:
                     str_out += ' -> NO'
                     try_counter += 1
