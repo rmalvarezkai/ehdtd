@@ -62,7 +62,7 @@ class BinanceEhdtdAuxClass():
 
             __l_url_api = BinanceEhdtdAuxClass.get_api_url()
             __l_endpoint = '/exchangeInfo'
-            __l_url_point = __l_url_api + __l_endpoint
+            __l_url_point = f'{__l_url_api}{__l_endpoint}'
             __data = ecf.file_get_contents_url(__l_url_point)
 
             if __data is not None and ecf.is_json(__data):
@@ -275,7 +275,8 @@ class BinanceEhdtdAuxClass():
                 data_line['exchange'] = 'binance'
                 data_line['symbol'] = symbol
                 data_line['interval'] = interval
-                result.append(data_line)
+                if isinstance(result, list):
+                    result.append(data_line)
 
         return result
 
@@ -521,13 +522,13 @@ class BinanceEhdtdAuxClass():
         return result
 
     @classmethod
-    def get_kline_data(cls,\
-                       symbol,\
-                       interval,\
-                       start_time: float=None,\
-                       end_time: float=None,\
-                       limit: int=1000,\
-                       default_endpoint: str='uiKlines',\
+    def get_kline_data(cls,
+                       symbol,
+                       interval,
+                       start_time: float=None,
+                       end_time: float=None,
+                       limit: int=1000,
+                       default_endpoint: str='uiKlines',
                        trading_type: str='SPOT'):
         """
         get_kline_data
@@ -559,11 +560,11 @@ class BinanceEhdtdAuxClass():
         start_time_out = ''
         end_time_out = ''
 
-        if start_time is not None and (isinstance(start_time, (int,float)) or start_time == 0):
+        if isinstance(start_time, (int, float)) and start_time >= 0:
             start_time = round(start_time * 1000)
             start_time_out = f'&startTime={start_time}'
 
-        if end_time is not None and (isinstance(end_time, (int,float)) or end_time == 0):
+        if isinstance(end_time, (int, float)) and end_time >= 0:
             end_time = round(end_time * 1000)
             end_time_out = f'&endTime={end_time}'
 

@@ -135,8 +135,12 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
     """
 
-    def __init__(self, exchange, fetch_data: list[dict],\
-                 db_data: dict, log_dir: str=None, trading_type: str='SPOT', debug: bool=False): # pylint: disable=too-many-instance-attributes, too-many-branches, too-many-statements, too-many-arguments
+    def __init__(self, exchange,
+                 fetch_data: list[dict],
+                 db_data: dict,
+                 log_dir: str=None,
+                 trading_type: str='SPOT',
+                 debug: bool=False): # pylint: disable=too-many-instance-attributes, too-many-branches, too-many-statements, too-many-arguments
         """
         Ehdtd constructor
         =================
@@ -290,7 +294,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     __msg_err = f'Error on create Ccxw instance in exchange {self.__exchange}'
                     __msg_err += f' {self.__trading_type}'
 
-                    if self.log_enabled:
+                    if self.log_enabled and self.__err_logger is not None:
                         self.__err_logger.error(__msg_err)
                     raise ValueError(__msg_err)
 
@@ -672,10 +676,12 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             __data = None
 
             try:
-                __data = self.__db_conn.execute(stmt)
-                row = __data.fetchone()
-                result_json_base64 = row[0] if row is not None else None
-                __data.close()
+                result_json_base64 = None
+                if self.__db_conn is not None:
+                    __data = self.__db_conn.execute(stmt)
+                    row = __data.fetchone()
+                    result_json_base64 = row[0] if row is not None else None
+                    __data.close()
 
                 if isinstance(result_json_base64, str):
                     result_json = base64.b64decode(result_json_base64).decode('utf-8')
@@ -700,8 +706,8 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
         key_sha256_hash = self.__get_key_cache_table(symbol, interval, cache_type)
 
         if self.__db_conn is not None:
-            table = sqlalchemy.Table(self.__cache_table_name,\
-                                     self.__db_metadata,\
+            table = sqlalchemy.Table(self.__cache_table_name,
+                                     self.__db_metadata,
                                      autoload_with=self.__db_conn)
 
             try:
@@ -2184,8 +2190,14 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
             if __hist_data is not None:
                 if self.__exec_db_upsert_stmt(symbol, interval, __hist_data, db_conn):
-                    str_out += ' -> YES'
-                    try_counter = 0
+                    __last_time_in_db_cmp = self.get_last_close_time_in_db(symbol,
+                                                                           interval, db_conn)
+                    if __last_time_in_db_cmp > __last_time_in_db:
+                        str_out += ' -> YES'
+                        try_counter = 0
+                    else:
+                        str_out += ' -> NO'
+                        try_counter += 1
                 else:
                     str_out += ' -> NO'
                     try_counter += 1
