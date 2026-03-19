@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ehdtd"
-version = "0.2.37"
+version = "0.2.38"
 description = "Ehdtd - cryptoCurrency Exchange history data to database"
 authors = ["Ricardo Marcelo Alvarez <rmalvarezkai@gmail.com>"]
 readme = "README.md"
@@ -19,6 +19,8 @@ logging = "^0.4.9.6"
 ccxw = "^0.2.32"
 pandas = "^2.3.3"
 ccxt = "^4.5.17"
+orjson = "^3.11.7"
+coincurve = "^21.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
