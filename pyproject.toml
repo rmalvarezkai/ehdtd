@@ -1,6 +1,6 @@
 [project]
 name = "ehdtd"
-version = "0.2.39"
+version = "0.2.41"
 description = "Ehdtd - cryptoCurrency Exchange history data to database"
 authors = [
     {name = "Ricardo Marcelo Alvarez",email = "rmalvarezkai@gmail.com"}

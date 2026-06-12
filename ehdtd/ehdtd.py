@@ -1201,9 +1201,10 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
 
                 __l_args = (start_from,)
                 self.__chk_db_all_symbols_thd['__ALL__'] = (
-                    threading.Thread(target=self.__check_database_all_symbols,\
-                                    name='ehdtd_check_database_all_symbols',\
-                                    args=__l_args)
+                    threading.Thread(target=self.__check_database_all_symbols,
+                                     name='ehdtd_check_database_all_symbols',
+                                     args=__l_args,
+                                     daemon=False)
                 )
 
                 self.__chk_db_all_symbols_thd['__ALL__'].start()
@@ -1219,9 +1220,10 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     __thread_name = f'ehdtd_check_database_{__table_name}'
                     __l_args = (symbol, interval, start_from)
                     self.__chk_db_all_symbols_thd[__table_name] = (
-                        threading.Thread(target=self.check_database_data,\
-                                        name=__thread_name,\
-                                        args=__l_args)
+                        threading.Thread(target=self.check_database_data,
+                                         name=__thread_name,
+                                         args=__l_args,
+                                         daemon=False)
                     )
 
                     self.__chk_db_all_symbols_thd[__table_name].start()
@@ -1819,8 +1821,10 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     self.__get_table_name(fetch_data_node['symbol'], fetch_data_node['interval'])
                 )
                 __thread_name = 'ehdtd_' + __thread_name
-                __data_thread = threading.Thread(target=self.__run_fetch_data_thread,\
-                                                 args=__l_args, name=__thread_name)
+                __data_thread = threading.Thread(target=self.__run_fetch_data_thread,
+                                                 daemon=False,
+                                                 args=__l_args,
+                                                 name=__thread_name)
 
                 __data_thread.start()
                 self.__threads.append(__data_thread)
@@ -1837,7 +1841,9 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 result = False
 
         self.__main_thread = (
-            threading.Thread(target=self.__run_main_thread, name='ehdtd_main_thread')
+            threading.Thread(target=self.__run_main_thread,
+                             name='ehdtd_main_thread',
+                             daemon=False)
         )
         self.__main_thread.start()
 
@@ -1891,13 +1897,56 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                 thread_queue.put('__STOP__')
                 self.__signals_queue_checks[thread_queue_key].put('__STOP__')
 
+        __threads_len = len(self.__threads)
+        __timeout = 9
+        __data_threads_alive = True
+        __time_ini = time.time()
+        __time_end = time.time()
+
+        while __data_threads_alive:
+            __num_alives = 0
+            for __data_thread in self.__threads:
+                if __data_thread.is_alive():
+                    __num_alives += 1
+            if __num_alives == 0:
+                __data_threads_alive = False
+
+            __time_end = time.time()
+            if (__time_end - __time_ini) > time_to_wait:
+                __data_threads_alive = False
+
+            time.sleep(0.50)
+
         for __data_thread in self.__threads:
             if __data_thread.is_alive():
-                __data_thread.join(time_to_wait)
+                __data_thread.join(__timeout)
 
         if self.__main_thread.is_alive():
             # print(f'main_thread_name: {self.__main_thread.getName()}')
             self.__main_thread.join(time_to_wait)
+
+        if self.__chk_db_all_symbols_thd is not None\
+            and isinstance(self.__chk_db_all_symbols_thd, dict):
+            __chk_db_all_symbols_thd_alive = True
+            __time_ini = time.time()
+            __time_end = time.time()
+
+            while __chk_db_all_symbols_thd_alive:
+                __num_alives = 0
+                for thread_chk_db in self.__chk_db_all_symbols_thd.values():
+                    if thread_chk_db is not None and thread_chk_db.is_alive():
+                        __num_alives += 1
+                if __num_alives == 0:
+                    __chk_db_all_symbols_thd_alive = False
+
+                __time_end = time.time()
+                if (__time_end - __time_ini) > time_to_wait:
+                    __chk_db_all_symbols_thd_alive = False
+                time.sleep(0.50)
+
+            for _, thread_chk_db in self.__chk_db_all_symbols_thd.items():
+                if thread_chk_db is not None and thread_chk_db.is_alive():
+                    thread_chk_db.join(__timeout)
 
         self.__is_threads_running = False
 

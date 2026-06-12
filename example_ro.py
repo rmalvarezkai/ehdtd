@@ -43,7 +43,7 @@ def main(argv): # pylint: disable=unused-argument
     db_data['db_type'] = 'postgresql' # postgresql, mysql
     db_data['db_name'] = 'ehdtd'
     db_data['db_user'] = 'ehdtd'
-    db_data['db_pass'] = 'ehdtd_9898'
+    db_data['db_pass'] = 'QBzkWGLTToIo'
     db_data['db_host'] = '127.0.0.1'
 
     # db_data['db_pass'] = ''
@@ -75,7 +75,7 @@ def main(argv): # pylint: disable=unused-argument
                                    until_to,\
                                    return_type)
 
-    print(data)
+    pprint.pprint(data, sort_dicts=False)
 
     return result
 
