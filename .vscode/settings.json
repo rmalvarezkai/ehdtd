@@ -5,7 +5,7 @@
     "python.createEnvironment.contentButton": "show",
     "python.autoComplete.extraPaths": [],
     "python.analysis.extraPaths": [],
-    "git.enabled": false,
+    "git.enabled": true,
     "markdown-preview-github-styles.lightTheme": "light",
     "markdown-preview-github-styles.colorTheme": "dark",
     "files.watcherExclude": {
