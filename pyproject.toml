@@ -1,6 +1,6 @@
 [project]
 name = "ehdtd"
-version = "0.2.43"
+version = "0.2.44"
 description = "Ehdtd - cryptoCurrency Exchange history data to database"
 authors = [
     {name = "Ricardo Marcelo Alvarez",email = "rmalvarezkai@gmail.com"}
@@ -15,7 +15,6 @@ dependencies = [
     "ccxw>=0.2.35",
     "coincurve>=21.0.0",
     "importlib>=1.0.4",
-    "logging>=0.4.9.6",
     "orjson>=3.11.8",
     "pandas>=3.0.2",
     "psycopg[binary]>=3.3.6",
