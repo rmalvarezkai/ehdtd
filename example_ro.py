@@ -33,17 +33,17 @@ def main(argv): # pylint: disable=unused-argument
     pprint.pprint(conn, sort_dicts=False)
 
 
-    symbols = ['BTC/USDT', 'BNB/USDT', 'ETH/USDT', 'LTC/USDT']
+    symbols = ['BTC/USDT']
 
     intervals = Ehdtd.get_supported_intervals(exchange)
-    intervals = ['1m', '3m', '5m', '15m', '3d']
+    intervals = ['1m', '5m', '15m']
 
     db_data = {}
     #db_data['db_type'] = 'mysql' # postgresql, mysql
     db_data['db_type'] = 'postgresql' # postgresql, mysql
     db_data['db_name'] = 'ehdtd'
     db_data['db_user'] = 'ehdtd'
-    db_data['db_pass'] = 'QBzkWGLTToIo'
+    db_data['db_pass'] = 'conlqqfOp4ws'
     db_data['db_host'] = '127.0.0.1'
 
     # db_data['db_pass'] = ''
