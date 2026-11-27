@@ -154,7 +154,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                                         }
 
                                             symbol: str valid symbol for exchange name.
-                                            interval: str '1m', '3m', '5m', '15m', '30m',
+                                            interval: str '1s', '1m', '3m', '5m', '15m', '30m',
                                                         '1h', '2h', '4h', '6h', '8h',
                                                         '12h', '1d', '3d', '1w', '1mo'
 
@@ -852,7 +852,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                         db_conn.commit()
                     else:
                         if commit_counter >= commit_limit:
-                            time.sleep(0.00005)
+                            time.sleep(0.0)
                             db_conn.commit()
                             commit_counter = 0
                         else:
@@ -1542,7 +1542,7 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
                     db_conn_local.execute(stmt)
 
                     if commit_counter >= commit_limit:
-                        time.sleep(0.00005)
+                        time.sleep(0.0)
                         db_conn_local.commit()
                         commit_counter = 0
                     else:
@@ -2811,13 +2811,13 @@ class Ehdtd(): # pylint: disable=too-many-instance-attributes
             EhdtdExchangeConfig.exchange_classes[exchange].get_supported_intervals()
         )
 
-        __ehdtd_intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h',\
-                             '6h', '8h', '12h', '1d', '3d', '1w', '1mo']
+        __ehdtd_intervals = ['1s', '1m', '3m', '5m', '15m', '30m', '1h', '2h',\
+                             '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1mo']
 
         __result = []
 
         for interval in __exchange_intervals:
-            if interval in __exchange_intervals:
+            if interval in __ehdtd_intervals:
                 __result.append(interval)
 
         return __result

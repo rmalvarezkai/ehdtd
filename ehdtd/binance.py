@@ -501,6 +501,7 @@ class BinanceEhdtdAuxClass():
 
         __delta_month = 86400 * last_day
         __intervals_map = {
+            '1s': 1,
             '1m': 60,
             '3m': 180,
             '5m': 300,
@@ -699,7 +700,7 @@ class BinanceEhdtdAuxClass():
 
                 :return: list of supported intervals.
         """
-        __result = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h',\
-                    '6h', '8h', '12h', '1d', '3d', '1w', '1mo']
+        __result = ['1s', '1m', '3m', '5m', '15m', '30m', '1h', '2h',\
+                    '4h','6h', '8h', '12h', '1d', '3d', '1w', '1mo']
 
         return __result
